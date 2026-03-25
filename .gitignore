@@ -15,3 +15,9 @@ instance/
 .DS_Store
 *.log
 uploads/
+
+# Ignore backup and archive files
+victor.rar
+*.rar
+*.zip
+
