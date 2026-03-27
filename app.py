@@ -1,7 +1,6 @@
-from backend.extensions import db, cors, migrate
-from backend.extensions import mail
-from backend.routes.auth import auth_bp
+from backend.extensions import db, cors, migrate, mail
 from flask import Flask
+from flask_jwt_extended import JWTManager
 from backend.routes.auth import auth_bp
 from backend.routes.front import front_bp
 from dotenv import load_dotenv
@@ -43,6 +42,18 @@ def create_app():
 
     # Allow environment variables to override values and ensure secret is set
     app.secret_key = os.getenv('FLASK_SECRET_KEY', app.config.get('SECRET_KEY', 'supersecretkey'))
+    
+    # JWT Configuration - must be set before JWTManager initialization
+    jwt_secret = os.getenv('JWT_SECRET_KEY', app.secret_key)
+    # Ensure JWT secret is at least 32 characters
+    if len(jwt_secret) < 32:
+        jwt_secret = jwt_secret + "_extra_padding_for_security_"
+    app.config['JWT_SECRET_KEY'] = jwt_secret
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400  # 24 hours
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 2592000  # 30 days
+    
+    # Initialize JWT manager
+    jwt = JWTManager(app)
 
     # Database configuration
     database_url = os.getenv('DATABASE_URL')
@@ -86,6 +97,9 @@ def create_app():
     cors.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
+    
+    # Initialize JWT for API authentication
+    jwt = JWTManager(app)
     # Ensure DB tables exist for this simple development environment
     try:
         with app.app_context():
@@ -131,6 +145,10 @@ def create_app():
 
     app.register_blueprint(front_bp)
     app.register_blueprint(auth_bp)
+    
+    # Register API blueprints for mobile app
+    from backend.api import register_routes
+    register_routes(app)
     
     # Initialize OAuth
     from backend.routes.auth import init_oauth

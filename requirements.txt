@@ -3,6 +3,7 @@ Flask-SQLAlchemy==3.1.1
 Flask-Mail==0.9.1
 Flask-Cors==6.0.2
 Flask-Migrate==4.0.5
+Flask-JWT-Extended==4.7.1
 Werkzeug==3.1.6
 itsdangerous==2.2.0
 Authlib==1.6.6

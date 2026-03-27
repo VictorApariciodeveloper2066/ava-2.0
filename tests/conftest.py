@@ -23,7 +23,11 @@ def app():
         "MAIL_PORT": 25,
         "MAIL_USE_TLS": False,
         "MAIL_USERNAME": None,
-        "MAIL_PASSWORD": None
+        "MAIL_PASSWORD": None,
+        # JWT config for tests
+        "JWT_SECRET_KEY": "test-secret-key-minimum-32-chars-long!!",
+        "JWT_ACCESS_TOKEN_EXPIRES": 3600,
+        "JWT_REFRESH_TOKEN_EXPIRES": 86400
     })
     return app
 
