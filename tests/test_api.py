@@ -22,7 +22,7 @@ def test_api_login_success(client, user_factory):
     assert data['user']['username'] == 'testuser'
 
 
-def test_api_login_invalid_credentials(client):
+def test_api_login_invalid_credentials(client, db):
     """Test API login with wrong password"""
     response = client.post('/api/auth/login', 
         json={'username': 'nonexistent', 'password': 'wrong'},
@@ -34,7 +34,7 @@ def test_api_login_invalid_credentials(client):
     assert 'error' in data
 
 
-def test_api_register_success(client):
+def test_api_register_success(client, db):
     """Test API register creates user and returns JWT"""
     response = client.post('/api/auth/register',
         json={

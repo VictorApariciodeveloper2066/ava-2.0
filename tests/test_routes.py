@@ -111,7 +111,7 @@ def test_courses_endpoint(client, user_factory, course_factory):
 
 def test_justificativos_page_access(client, user_factory):
     """Test accessing justificativos page."""
-    user = user_factory(role='student')
+    user = user_factory(role='estudiante')
     
     # Login
     client.post('/auth/login', 
