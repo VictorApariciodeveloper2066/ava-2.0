@@ -30,10 +30,15 @@ export default function LoginScreen({ navigation }: Props) {
     }
 
     try {
+      console.log('Intentando login con:', username);
       await login(username, password);
+      console.log('Login exitoso');
       // Navigation will happen automatically via useEffect in App.tsx
     } catch (error: any) {
-      const message = error?.response?.data?.error || 'Error al iniciar sesión';
+      console.log('Error completo:', error);
+      console.log('Response:', error?.response);
+      console.log('Message:', error?.message);
+      const message = error?.response?.data?.error || error?.message || 'Error al iniciar sesión. Verifica tu conexión.';
       Alert.alert('Error', message);
     }
   };

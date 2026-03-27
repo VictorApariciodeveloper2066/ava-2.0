@@ -1,9 +1,11 @@
 // Zustand store for app state management
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Seccion, Course, AttendanceRecord, Justificativo } from '../types';
 import apiService from '../services/api';
 import { STORAGE_KEYS } from '../utils/env';
+
+// Re-export storage from api service
+import { storage } from '../services/api';
 
 interface AppState {
   // Auth state
@@ -94,8 +96,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Check auth on app start
   checkAuth: async () => {
     try {
-      const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-      const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const userData = await storage.getItem(STORAGE_KEYS.USER_DATA);
+      const token = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       
       if (userData && token) {
         const user = JSON.parse(userData);

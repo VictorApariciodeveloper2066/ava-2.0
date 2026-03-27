@@ -1,7 +1,36 @@
 // API Service for communicating with Flask backend
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, STORAGE_KEYS } from '../utils/env';
+
+// Simple in-memory storage that works in Expo Go
+const memoryStorage: Record<string, string> = {};
+
+export const storage = {
+  async getItem(key: string): Promise<string | null> {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      return await AsyncStorage.getItem(key);
+    } catch {
+      return memoryStorage[key] || null;
+    }
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.setItem(key, value);
+    } catch {
+      memoryStorage[key] = value;
+    }
+  },
+  async removeItem(key: string): Promise<void> {
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.removeItem(key);
+    } catch {
+      delete memoryStorage[key];
+    }
+  }
+};
 import {
   AuthResponse,
   LoginCredentials,
@@ -31,7 +60,7 @@ class ApiService {
     this.api.interceptors.request.use(
       async (config) => {
         if (!this.accessToken) {
-          this.accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+          this.accessToken = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
         }
         if (this.accessToken) {
           config.headers.Authorization = `Bearer ${this.accessToken}`;
@@ -56,7 +85,7 @@ class ApiService {
 
   private async handleTokenExpired(): Promise<void> {
     try {
-      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const refreshToken = await storage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (refreshToken) {
         const response = await this.api.post('/auth/refresh', {}, {
           headers: { Authorization: `Bearer ${refreshToken}` },
@@ -73,9 +102,9 @@ class ApiService {
 
   private async setTokens(accessToken: string, refreshToken?: string): Promise<void> {
     this.accessToken = accessToken;
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    await storage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
     if (refreshToken) {
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+      await storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
   }
 
@@ -83,7 +112,7 @@ class ApiService {
     const response = await this.api.post<AuthResponse>('/auth/login', credentials);
     const { access_token, refresh_token, user } = response.data;
     await this.setTokens(access_token, refresh_token);
-    await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+    await storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     return response.data;
   }
 
@@ -91,15 +120,15 @@ class ApiService {
     const response = await this.api.post<AuthResponse>('/auth/register', data);
     const { access_token, user } = response.data;
     await this.setTokens(access_token);
-    await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+    await storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     return response.data;
   }
 
   async logout(): Promise<void> {
     this.accessToken = null;
-    await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    await storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    await storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    await storage.removeItem(STORAGE_KEYS.USER_DATA);
   }
 
   async getProfile(): Promise<{ user: User }> {
@@ -110,7 +139,7 @@ class ApiService {
   async updateProfile(data: Partial<User>): Promise<{ user: User; message: string }> {
     const response = await this.api.put<{ user: User; message: string }>('/auth/profile', data);
     const { user } = response.data;
-    await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+    await storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     return response.data;
   }
 
