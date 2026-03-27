@@ -4,7 +4,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/..')
 from app import create_app
 from backend.extensions import db as _db
-from backend.models import User, Course
+from backend.models import (
+    User, Course, Institucion, Carrera, Asignatura,
+    PeriodoAcademico, Seccion, Inscripcion
+)
 
 @pytest.fixture(scope='session')
 def app():
@@ -86,3 +89,52 @@ def course_factory(db):
         db.session.commit()
         return course
     return create_course
+
+
+# Factory fixtures for new models
+@pytest.fixture
+def institucion_factory(db):
+    def create_institucion(**kwargs):
+        import uuid
+        unique_id = uuid.uuid4().hex[:8]
+        defaults = {
+            "nombre": f"Institución Test {unique_id}",
+            "codigo": f"INST-{unique_id[:6].upper()}",
+            "direccion": "Dirección de prueba",
+            "email": f"test-{unique_id}@institucion.com"
+        }
+        defaults.update(kwargs)
+        institucion = Institucion(**defaults)
+        db.session.add(institucion)
+        db.session.commit()
+        return institucion
+    return create_institucion
+
+
+@pytest.fixture
+def carrera_factory(db):
+    def create_carrera(institucion=None, **kwargs):
+        import uuid
+        if institucion is None:
+            # Create parent if not provided
+            unique_id = uuid.uuid4().hex[:8]
+            institucion = Institucion(
+                nombre=f"Institución Test {unique_id}",
+                codigo=f"INST-{unique_id[:6].upper()}"
+            )
+            db.session.add(institucion)
+            db.session.commit()
+
+        unique_id = uuid.uuid4().hex[:8]
+        defaults = {
+            "institucion_id": institucion.id,
+            "nombre": f"Carrera Test {unique_id}",
+            "codigo": f"CAR-{unique_id[:4].upper()}",
+            "duracion_semestres": 10
+        }
+        defaults.update(kwargs)
+        carrera = Carrera(**defaults)
+        db.session.add(carrera)
+        db.session.commit()
+        return carrera
+    return create_carrera

@@ -1,1 +1,22 @@
-from .models import User, Course, User_course, Asistencia, Justificativo, HistorialAsistencia, DetalleAsistencia, LogAsistencia
+# Nuevos modelos (rediseño multi-institucional)
+from .models import (
+    Institucion,
+    Carrera,
+    Asignatura,
+    PeriodoAcademico,
+    User,
+    ProfesorEspecialidad,
+    Seccion,
+    Inscripcion,
+)
+
+# Modelos legacy (compatibilidad)
+from .models import (
+    Course,
+    User_course,
+    Asistencia,
+    Justificativo,
+    HistorialAsistencia,
+    DetalleAsistencia,
+    LogAsistencia,
+)

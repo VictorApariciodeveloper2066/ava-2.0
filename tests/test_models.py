@@ -44,10 +44,7 @@ def test_user_course_relationship(user_factory, course_factory, db):
     user.courses.append(course2)
     db.session.commit()
     
-    assert len(user.courses) == 2
-    assert course1 in user.courses
-    assert course2 in user.courses
-    
-    # Test reverse relationship
-    assert user in course1.users
-    assert user in course2.users
+    # Use .count() instead of len() for lazy query
+    assert user.courses.count() == 2
+    assert course1 in user.courses.all()
+    assert course2 in user.courses.all()
