@@ -60,7 +60,7 @@ export default function DashboardScreen({ navigation }: Props) {
   const renderSeccion = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => navigation.navigate('Asistencia', { seccion: item })}
+      onPress={() => navigation.navigate('Attendance', { seccion: item })}
     >
       <Text style={styles.cardTitle}>{item.codigo}</Text>
       <Text style={styles.cardSubtitle}>Aula: {item.aula || 'Sin asignar'}</Text>
@@ -99,6 +99,14 @@ export default function DashboardScreen({ navigation }: Props) {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Attendance')}
+        >
+          <Text style={styles.actionIcon}>✅</Text>
+          <Text style={styles.actionLabel}>Asistencia</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => navigation.navigate('AttendanceHistory')}

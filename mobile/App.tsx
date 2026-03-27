@@ -10,6 +10,10 @@ import { useAppStore } from './src/store';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
+import AttendanceScreen from './src/screens/AttendanceScreen';
+import AttendanceHistoryScreen from './src/screens/AttendanceHistoryScreen';
+import JustificativosScreen from './src/screens/JustificativosScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,11 +49,33 @@ function AppNavigator() {
     >
       {isAuthenticated ? (
         // Authenticated screens
-        <Stack.Screen 
-          name="Dashboard" 
-          component={DashboardScreen}
-          options={{ title: 'AVA - Dashboard', headerShown: false }}
-        />
+        <>
+          <Stack.Screen 
+            name="Dashboard" 
+            component={DashboardScreen}
+            options={{ title: 'AVA - Dashboard', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Attendance" 
+            component={AttendanceScreen}
+            options={{ title: 'Marcar Asistencia' }}
+          />
+          <Stack.Screen 
+            name="AttendanceHistory" 
+            component={AttendanceHistoryScreen}
+            options={{ title: 'Historial de Asistencia' }}
+          />
+          <Stack.Screen 
+            name="Justificativos" 
+            component={JustificativosScreen}
+            options={{ title: 'Justificativos' }}
+          />
+          <Stack.Screen 
+            name="Profile" 
+            component={ProfileScreen}
+            options={{ title: 'Mi Perfil' }}
+          />
+        </>
       ) : (
         // Auth screens
         <>
