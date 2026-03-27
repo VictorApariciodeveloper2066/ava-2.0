@@ -138,6 +138,10 @@ class User(db.Model):
     carrera_id = db.Column(db.Integer, db.ForeignKey('carrera.id'), nullable=True)  # Para estudiantes
     institucion_id = db.Column(db.ForeignKey('institucion.id'), nullable=True)  # Para todos
     
+    # Campo career legacy (para compatibilidad con código antiguo)
+    # Este campo será migrado a carrera_id eventualmente
+    career = db.Column(db.String(100), nullable=True)
+    
     # Flags
     es_comandante = db.Column(db.Boolean, default=False)
     activo = db.Column(db.Boolean, default=True)

@@ -723,12 +723,24 @@ def complete_profile():
     user.primer_nombre = data.get('primer_nombre', '').strip()
     user.primer_apellido = data.get('primer_apellido', '').strip()
     user.ci = data.get('ci', '').strip()
-    user.career = data.get('career', '').strip() if user.role == 'student' else 'Profesor'
+    
+    # Guardar career para backwards compatibility (código antiguo usa este campo)
+    # Y también intentar mapear a carrera_id si se proporciona el ID de carrera
+    career_value = data.get('career', '').strip()
+    carrera_id_value = data.get('carrera_id')
+    
+    if user.role in ('estudiante', 'student'):
+        user.career = career_value
+        # Si se proporciona carrera_id, también guardarlo
+        if carrera_id_value:
+            user.carrera_id = int(carrera_id_value)
+    else:
+        user.career = 'Profesor'
     
     if not all([user.primer_nombre, user.primer_apellido, user.ci]):
         return jsonify({"error": "Nombre, apellido y cédula son requeridos"}), 400
     
-    if user.role == 'student' and not user.career:
+    if user.role in ('estudiante', 'student') and not user.career and not user.carrera_id:
         return jsonify({"error": "La carrera es requerida para estudiantes"}), 400
     
     # Inscribir en materias seleccionadas

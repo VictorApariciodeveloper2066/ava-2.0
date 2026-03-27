@@ -29,9 +29,11 @@ def dashboard():
     if not user.primer_nombre or not user.primer_apellido or not user.ci:
         return redirect(url_for('front.completar_perfil'))
     
-    # Para estudiantes, verificar que tengan carrera
-    if user.role == 'estudiante' and not user.carrera_id:
-        return redirect(url_for('front.completar_perfil'))
+    # Para estudiantes, verificar que tengan carrera (acepta career legacy O carrera_id)
+    if user.role == 'estudiante':
+        tiene_carrera = user.career or user.carrera_id
+        if not tiene_carrera:
+            return redirect(url_for('front.completar_perfil'))
     
     # Verificar si tiene materias inscritas
     if user.role == 'estudiante':
