@@ -1,3 +1,11 @@
+"""
+AVA 2.0 - Sistema de Asistencia Virtual
+Flask Application Factory
+
+This is the main entry point for the AVA application.
+Uses configuration from config/default.py
+"""
+
 from backend.extensions import db, cors, migrate, mail
 from flask import Flask
 from flask_jwt_extended import JWTManager
@@ -7,12 +15,21 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import shutil
-from backend.models import User, Course
 
+# Load environment variables from .env
 load_dotenv()
+
+# Get app directory
 APP_DIR = Path(__file__).resolve().parent
 
+
 def create_app():
+    """
+    Application factory for AVA 2.0
+    
+    Returns:
+        Flask: Configured Flask application instance
+    """
     app = Flask(
         __name__,
         template_folder=str(APP_DIR / 'frontend' / 'templates'),
@@ -20,12 +37,44 @@ def create_app():
         static_url_path='/static'
     )
 
-    # Ensure instance directory exists and prefer instance/user.db as primary DB.
+    # === Copy existing database to instance folder if needed ===
+    _setup_database_location()
+
+    # === Load Configuration ===
+    # Use config/default.py for all settings
+    try:
+        app.config.from_object('config.default.Config')
+    except Exception as e:
+        print(f"Warning: Could not load config.default.Config: {e}")
+    
+    # Override with environment variables (highest priority)
+    app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', app.config.get('SECRET_KEY', 'supersecretkey'))
+    
+    # === Initialize Extensions ===
+    _init_extensions(app)
+    
+    # === Initialize Database and Seed Data ===
+    _init_database(app)
+    
+    # === Register Blueprints (Routes) ===
+    _register_blueprints(app)
+    
+    # === Initialize OAuth ===
+    _init_oauth(app)
+    
+    return app
+
+
+def _setup_database_location():
+    """
+    Ensure instance directory exists and copy database if needed.
+    This helps with database location for SQLite.
+    """
     instance_dir = APP_DIR / 'instance'
     instance_dir.mkdir(parents=True, exist_ok=True)
     instance_db_path = instance_dir / 'users.db'
-    # If instance DB doesn't exist but project users.db does, copy it into instance
     project_users_db = APP_DIR / 'users.db'
+    
     try:
         if not instance_db_path.exists() and project_users_db.exists():
             shutil.copy2(project_users_db, instance_db_path)
@@ -33,130 +82,78 @@ def create_app():
     except Exception as e:
         print('Failed copying users.db to instance:', e)
 
-    # Load default config from config/default.py if available
-    try:
-        app.config.from_object('config.default.Config')
-    except Exception:
-        # fallback to environment variables below
-        pass
 
-    # Allow environment variables to override values and ensure secret is set
-    app.secret_key = os.getenv('FLASK_SECRET_KEY', app.config.get('SECRET_KEY', 'supersecretkey'))
-    
-    # JWT Configuration - must be set before JWTManager initialization
-    jwt_secret = os.getenv('JWT_SECRET_KEY', app.secret_key)
-    # Ensure JWT secret is at least 32 characters
-    if len(jwt_secret) < 32:
-        jwt_secret = jwt_secret + "_extra_padding_for_security_"
-    app.config['JWT_SECRET_KEY'] = jwt_secret
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400  # 24 hours
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 2592000  # 30 days
-    
-    # Initialize JWT manager
-    jwt = JWTManager(app)
-
-    # Database configuration
-    database_url = os.getenv('DATABASE_URL')
-    if database_url:
-        # Render/Heroku PostgreSQL
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    else:
-        # Local SQLite
-        instance_db_path = APP_DIR / 'instance' / 'users.db'
-        app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{instance_db_path}"
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # Google OAuth configuration
-    app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
-    app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
-    
-    # Solo mostrar warning si OAuth está siendo usado
-    if not app.config['GOOGLE_CLIENT_ID'] or not app.config['GOOGLE_CLIENT_SECRET']:
-        pass  # OAuth deshabilitado, no mostrar warning
-    else:
-        print(f"Google OAuth configured with client ID: {app.config['GOOGLE_CLIENT_ID'][:20]}...")
-
-    # Ensure mail defaults come from env or config.default
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', app.config.get('MAIL_SERVER', 'smtp.gmail.com'))
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', app.config.get('MAIL_PORT', 587)))
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', str(app.config.get('MAIL_USE_TLS', True))) in ('True', 'true', '1')
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', app.config.get('MAIL_USERNAME'))
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', app.config.get('MAIL_PASSWORD'))
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', app.config.get('MAIL_DEFAULT_SENDER', app.config.get('MAIL_USERNAME')))
-    # Mail configuration (can be set via environment variables)
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') in ('True', 'true', '1')
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', app.config.get('MAIL_USERNAME'))
-
+def _init_extensions(app):
+    """Initialize Flask extensions"""
+    # Database
     db.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
+    
+    # CORS - Allow API access from mobile apps
+    cors_origins = app.config.get('CORS_ORIGINS', '*')
+    cors_methods = app.config.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+    cors_headers = app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization'])
+    cors.init_app(app, resources={r"/api/*": {
+        "origins": cors_origins,
+        "methods": cors_methods,
+        "allow_headers": cors_headers
+    }})
+    
+    # Migrations
     migrate.init_app(app, db)
+    
+    # Email
     mail.init_app(app)
     
-    # Initialize JWT for API authentication
-    jwt = JWTManager(app)
-    # Ensure DB tables exist for this simple development environment
+    # JWT (for Mobile API authentication)
+    JWTManager(app)
+
+
+def _init_database(app):
+    """Initialize database tables and seed initial data"""
     try:
-        with app.app_context():
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
-            
-            if 'user' not in tables:
-                print('📦 Creando tablas...')
-                db.create_all()
-                print('✅ Tablas creadas')
-                
-                # Crear datos iniciales solo si no existen
-                if not User.query.first():
-                    print('📝 Creando datos iniciales...')
-                    
-                    admin = User(username='admin', email='admin@ava.com')
-                    admin.set_password('admin123')
-                    admin.role = 'teacher'
-                    admin.primer_nombre = 'Administrador'
-                    admin.primer_apellido = 'Sistema'
-                    admin.ci = '0000000000'
-                    admin.career = 'Profesor'
-                    db.session.add(admin)
-                    
-                    materias = [
-                        Course(name='Inglés', dia=1, start_time='08:00', end_time='10:00', aula='A-101'),
-                        Course(name='Matemáticas', dia=2, start_time='08:00', end_time='10:00', aula='A-102'),
-                        Course(name='Historia', dia=3, start_time='10:00', end_time='15:30', aula='A-103'),
-                        Course(name='Programación', dia=4, start_time='09:00', end_time='20:00', aula='LAB-1'),
-                        Course(name='Educación Física', dia=5, start_time='08:00', end_time='10:00', aula='CANCHA'),
-                    ]
-                    for materia in materias:
-                        db.session.add(materia)
-                    
-                    db.session.commit()
-                    print('✅ Datos iniciales creados')
-                    print('📧 Usuario: admin@ava.com')
-                    print('🔑 Contraseña: admin123')
-    except Exception:
+        from scripts.init_db import seed_if_empty
+        seed_if_empty(app)
+    except Exception as e:
+        print(f"Warning: Could not initialize database: {e}")
         import traceback
         traceback.print_exc()
 
+
+def _register_blueprints(app):
+    """Register Flask blueprints (routes)"""
+    # Web routes (Jinja2 templates)
     app.register_blueprint(front_bp)
     app.register_blueprint(auth_bp)
     
-    # Register API blueprints for mobile app
+    # API routes (JSON REST API for mobile)
     from backend.api import register_routes
     register_routes(app)
-    
-    # Initialize OAuth
+
+
+def _init_oauth(app):
+    """Initialize Google OAuth"""
     from backend.routes.auth import init_oauth
     init_oauth(app)
 
-    return app
 
+# === Application Entry Point ===
 app = create_app()
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    # Run the application
+    # Use --host=0.0.0.0 to allow network access (for mobile testing)
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='AVA 2.0 - Sistema de Asistencia')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
+    parser.add_argument('--port', type=int, default=5000, help='Port to bind to')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    args = parser.parse_args()
+    
+    app.run(
+        host=args.host,
+        port=args.port,
+        debug=args.debug or app.config.get('DEBUG', False),
+        use_reloader=False  # Disable reloader to avoid duplicate initialization
+    )
