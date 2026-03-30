@@ -220,10 +220,10 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#122017', // Dark green from web theme
   },
   header: {
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079', // Primary green
     padding: 30,
     alignItems: 'center',
   },
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff',
+    backgroundColor: '#122017',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -239,20 +239,20 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a73e8',
+    color: '#39E079',
   },
   username: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#122017', // Dark text on green
   },
   role: {
     fontSize: 14,
-    color: '#e0e0e0',
+    color: '#1a2a1f',
     marginTop: 4,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f', // Card background
     marginTop: 16,
     padding: 20,
   },
@@ -265,10 +265,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f6f8f7',
   },
   editButton: {
-    color: '#1a73e8',
+    color: '#39E079',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -277,30 +277,31 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#666',
+    color: '#a0a0a0',
     marginBottom: 4,
   },
   value: {
     fontSize: 16,
-    color: '#333',
+    color: '#f6f8f7',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#39E079',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#122017',
+    color: '#f6f8f7',
   },
   saveButton: {
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
   saveButtonText: {
-    color: '#fff',
+    color: '#122017',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -313,15 +314,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#2a3a2f',
   },
   settingText: {
     fontSize: 16,
-    color: '#333',
+    color: '#f6f8f7',
   },
   settingValue: {
     fontSize: 14,
-    color: '#666',
+    color: '#a0a0a0',
   },
   logoutButton: {
     backgroundColor: '#f44336',
@@ -341,6 +342,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#999',
+    color: '#a0a0a0',
   },
 });

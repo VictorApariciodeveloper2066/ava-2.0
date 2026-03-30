@@ -198,35 +198,35 @@ export default function JustificativosScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#122017', // Dark green from web theme
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079', // Primary green
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#122017', // Dark text on green
   },
   addButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#122017',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
   addButtonText: {
-    color: '#1a73e8',
+    color: '#39E079',
     fontWeight: '600',
   },
   list: {
     padding: 16,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f', // Card background
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f6f8f7',
   },
   badge: {
     paddingHorizontal: 10,
@@ -253,59 +253,60 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeText: {
-    color: '#fff',
+    color: '#122017',
     fontSize: 12,
     fontWeight: '600',
   },
   cardDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#a0a0a0',
     marginBottom: 4,
   },
   cardMotivo: {
     fontSize: 13,
-    color: '#555',
+    color: '#f6f8f7',
   },
   emptyState: {
     padding: 40,
     alignItems: 'center',
   },
   emptyText: {
-    color: '#999',
+    color: '#a0a0a0',
     fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f',
     borderRadius: 16,
     padding: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f6f8f7',
     marginBottom: 20,
     textAlign: 'center',
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#f6f8f7',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#39E079',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#122017',
+    color: '#f6f8f7',
   },
   textArea: {
     height: 100,
@@ -321,23 +322,23 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#39E079',
     marginRight: 10,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#666',
+    color: '#39E079',
     fontSize: 16,
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
   submitButtonText: {
-    color: '#fff',
+    color: '#122017',
     fontSize: 16,
     fontWeight: '600',
   },

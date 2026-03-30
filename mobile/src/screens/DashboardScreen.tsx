@@ -1,5 +1,4 @@
-// Dashboard Screen - Redesigned with web theme
-// Shows courses clearly with attendance info
+// Dashboard Screen - Grid layout with sidebar
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -12,11 +11,16 @@ import {
   ScrollView,
   StatusBar,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { useAppStore } from '../store';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import theme from '../utils/theme';
-import Button from '../components/Button';
+import Sidebar from '../components/Sidebar';
+
+const { width } = Dimensions.get('window');
+const CARD_MARGIN = theme.spacing.sm;
+const CARD_WIDTH = (width - theme.spacing.lg * 2 - CARD_MARGIN * 2) / 2;
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -33,6 +37,7 @@ export default function DashboardScreen({ navigation }: Props) {
   } = useAppStore();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   useEffect(() => {
     loadSecciones();
@@ -57,17 +62,16 @@ export default function DashboardScreen({ navigation }: Props) {
     );
   };
 
-  const getDayName = (dia: number) => {
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    return days[dia] || 'Desconocido';
-  };
-
   const getDayShort = (dia: number) => {
     const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     return days[dia] || 'N/A';
   };
 
-  // Get greeting based on time
+  const getDayFull = (dia: number) => {
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    return days[dia] || 'Desconocido';
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Buenos días';
@@ -75,40 +79,68 @@ export default function DashboardScreen({ navigation }: Props) {
     return 'Buenas noches';
   };
 
-  const renderSeccion = ({ item }: { item: any }) => (
+  const getRoleEmoji = (role: string | undefined) => {
+    switch (role) {
+      case 'estudiante': return '🎓';
+      case 'profesor': return '👨‍🏫';
+      case 'comandante': return '🎖️';
+      default: return '👤';
+    }
+  };
+
+  const getRoleName = (role: string | undefined) => {
+    switch (role) {
+      case 'estudiante': return 'Estudiante';
+      case 'profesor': return 'Profesor';
+      case 'comandante': return 'Comandante';
+      default: return 'Administrador';
+    }
+  };
+
+  // Sidebar items
+  const sidebarItems = [
+    {
+      icon: '📋',
+      label: 'Historial de Asistencia',
+      onPress: () => navigation.navigate('AttendanceHistory'),
+    },
+    {
+      icon: '📝',
+      label: 'Justificativos',
+      onPress: () => navigation.navigate('Justificativos'),
+    },
+    {
+      icon: '👤',
+      label: 'Mi Perfil',
+      onPress: () => navigation.navigate('Profile'),
+    },
+    {
+      icon: '⚙️',
+      label: 'Configuración',
+      onPress: () => navigation.navigate('Profile'),
+    },
+  ];
+
+  const renderCourseCard = ({ item, index }: { item: any; index: number }) => (
     <TouchableOpacity 
-      style={styles.courseCard}
+      style={[
+        styles.courseCard,
+        index % 2 === 0 ? { marginRight: CARD_MARGIN } : { marginLeft: CARD_MARGIN },
+      ]}
       onPress={() => navigation.navigate('Attendance', { seccion: item })}
       activeOpacity={0.8}
     >
-      {/* Course Header */}
-      <View style={styles.courseHeader}>
-        <View style={styles.courseDayBadge}>
-          <Text style={styles.courseDayText}>{getDayShort(item.dia)}</Text>
-        </View>
-        <View style={styles.courseInfo}>
-          <Text style={styles.courseName}>{item.codigo || item.name}</Text>
-          <Text style={styles.courseTime}>
-            {item.start_time || '--:--'} - {item.end_time || '--:--'}
-          </Text>
-        </View>
+      <View style={styles.courseDayBadge}>
+        <Text style={styles.courseDayText}>{getDayShort(item.dia)}</Text>
       </View>
-
-      {/* Course Details */}
-      <View style={styles.courseDetails}>
-        <View style={styles.detailItem}>
-          <Text style={styles.detailLabel}>Aula</Text>
-          <Text style={styles.detailValue}>{item.aula || 'Sin asignar'}</Text>
-        </View>
-        <View style={styles.detailItem}>
-          <Text style={styles.detailLabel}>Asistencia</Text>
-          <Text style={styles.detailValue}>85%</Text>
-        </View>
+      <Text style={styles.courseName} numberOfLines={2}>
+        {item.codigo || item.name}
+      </Text>
+      <View style={styles.courseTime}>
+        <Text style={styles.timeText}>{item.start_time || '--:--'}</Text>
       </View>
-
-      {/* Action */}
-      <View style={styles.courseAction}>
-        <Text style={styles.actionText}>Marcar Asistencia →</Text>
+      <View style={styles.courseAula}>
+        <Text style={styles.aulaText}>{item.aula || 'Sin aula'}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -116,6 +148,15 @@ export default function DashboardScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      
+      {/* Sidebar */}
+      <Sidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        items={sidebarItems}
+        userName={user?.primer_nombre || user?.username || 'Usuario'}
+        userRole={getRoleName(user?.role)}
+      />
       
       <ScrollView
         style={styles.scroll}
@@ -131,51 +172,56 @@ export default function DashboardScreen({ navigation }: Props) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => setSidebarVisible(true)}
+          >
+            <Text style={styles.menuIcon}>☰</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>
               {user?.primer_nombre || user?.username || 'Usuario'}
             </Text>
             <Text style={styles.userRole}>
-              {user?.role === 'estudiante' ? '🎓 Estudiante' : 
-               user?.role === 'profesor' ? '👨‍🏫 Profesor' : 
-               user?.role === 'comandante' ? '🎖️ Comandante' : '👤 Administrador'}
+              {getRoleEmoji(user?.role)} {getRoleName(user?.role)}
             </Text>
           </View>
+
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Text style={styles.logoutText}>Salir</Text>
+            <Text style={styles.logoutIcon}>⏻</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📅</Text>
-            <Text style={styles.statValue}>3</Text>
-            <Text style={styles.statLabel}>Hoy</Text>
+            <Text style={styles.statValue}>{secciones.length}</Text>
+            <Text style={styles.statLabel}>Materias</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>✅</Text>
             <Text style={styles.statValue}>85%</Text>
             <Text style={styles.statLabel}>Asistencia</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📚</Text>
-            <Text style={styles.statValue}>{secciones.length}</Text>
-            <Text style={styles.statLabel}>Materias</Text>
+            <Text style={styles.statValue}>2</Text>
+            <Text style={styles.statLabel}>Pendientes</Text>
           </View>
         </View>
 
         {/* Courses Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mis Materias</Text>
+          <Text style={styles.sectionTitle}>📚 Mis Materias</Text>
           
           {secciones.length > 0 ? (
-            secciones.map((seccion, index) => (
-              <View key={seccion.id || index}>
-                {renderSeccion({ item: seccion })}
-              </View>
-            ))
+            <View style={styles.grid}>
+              {secciones.map((seccion, index) => (
+                <View key={seccion.id || index} style={styles.gridItem}>
+                  {renderCourseCard({ item: seccion, index })}
+                </View>
+              ))}
+            </View>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📚</Text>
@@ -185,33 +231,6 @@ export default function DashboardScreen({ navigation }: Props) {
               </Text>
             </View>
           )}
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => navigation.navigate('AttendanceHistory')}
-          >
-            <Text style={styles.quickActionIcon}>📋</Text>
-            <Text style={styles.quickActionLabel}>Historial</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => navigation.navigate('Justificativos')}
-          >
-            <Text style={styles.quickActionIcon}>📝</Text>
-            <Text style={styles.quickActionLabel}>Justificar</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Text style={styles.quickActionIcon}>👤</Text>
-            <Text style={styles.quickActionLabel}>Perfil</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -234,39 +253,46 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     padding: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
-  headerLeft: {
+  menuButton: {
+    padding: theme.spacing.sm,
+  },
+  menuIcon: {
+    fontSize: 28,
+    color: theme.colors.primary,
+  },
+  headerCenter: {
     flex: 1,
+    marginLeft: theme.spacing.md,
   },
   greeting: {
-    fontSize: theme.typography.body,
+    fontSize: theme.typography.small,
     color: theme.colors.textSecondary,
   },
   userName: {
     fontSize: theme.typography.heading,
     fontWeight: theme.typography.bold,
     color: theme.colors.text,
-    marginTop: theme.spacing.xs,
+    marginTop: 2,
   },
   userRole: {
     fontSize: theme.typography.small,
     color: theme.colors.primary,
-    marginTop: theme.spacing.xs,
+    marginTop: 2,
   },
   logoutButton: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
+    padding: theme.spacing.sm,
   },
-  logoutText: {
+  logoutIcon: {
+    fontSize: 24,
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.body,
   },
 
-  // Stats
-  statsContainer: {
+  // Stats Row
+  statsRow: {
     flexDirection: 'row',
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
@@ -276,22 +302,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    marginHorizontal: theme.spacing.xs,
+    marginHorizontal: CARD_MARGIN / 2,
     alignItems: 'center',
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: theme.spacing.xs,
-  },
   statValue: {
-    fontSize: theme.typography.heading,
+    fontSize: theme.typography.heading + 4,
     fontWeight: theme.typography.bold,
     color: theme.colors.primary,
   },
   statLabel: {
     fontSize: theme.typography.tiny,
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    marginTop: 4,
   },
 
   // Section
@@ -305,74 +327,60 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
 
+  // Grid
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -CARD_MARGIN,
+  },
+  gridItem: {
+    width: '50%',
+    marginBottom: theme.spacing.md,
+  },
+
   // Course Card
   courseCard: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: '#1a2a1f',
-  },
-  courseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    height: CARD_WIDTH,
+    justifyContent: 'space-between',
   },
   courseDayBadge: {
     backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    marginRight: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    alignSelf: 'flex-start',
   },
   courseDayText: {
     color: theme.colors.textDark,
     fontWeight: theme.typography.bold,
-    fontSize: theme.typography.small,
-  },
-  courseInfo: {
-    flex: 1,
+    fontSize: theme.typography.tiny,
   },
   courseName: {
-    fontSize: theme.typography.body + 2,
+    fontSize: theme.typography.body,
     fontWeight: theme.typography.bold,
     color: theme.colors.text,
+    marginVertical: theme.spacing.sm,
   },
   courseTime: {
-    fontSize: theme.typography.small,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    backgroundColor: '#2a3a2f',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    alignSelf: 'flex-start',
   },
-  courseDetails: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#2a3a2f',
-    paddingTop: theme.spacing.md,
-  },
-  detailItem: {
-    flex: 1,
-  },
-  detailLabel: {
-    fontSize: theme.typography.tiny,
-    color: theme.colors.textSecondary,
-  },
-  detailValue: {
-    fontSize: theme.typography.body,
-    fontWeight: theme.typography.semibold,
+  timeText: {
     color: theme.colors.text,
+    fontSize: theme.typography.tiny,
+  },
+  courseAula: {
     marginTop: theme.spacing.xs,
   },
-  courseAction: {
-    marginTop: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: '#2a3a2f',
-  },
-  actionText: {
-    color: theme.colors.primary,
-    fontWeight: theme.typography.semibold,
-    fontSize: theme.typography.body,
+  aulaText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.tiny,
   },
 
   // Empty State
@@ -394,25 +402,5 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.body,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-  },
-
-  // Quick Actions
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-  },
-  quickAction: {
-    alignItems: 'center',
-    padding: theme.spacing.md,
-  },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: theme.spacing.sm,
-  },
-  quickActionLabel: {
-    fontSize: theme.typography.small,
-    color: theme.colors.textSecondary,
   },
 });

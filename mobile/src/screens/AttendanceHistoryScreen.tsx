@@ -122,11 +122,11 @@ export default function AttendanceHistoryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#122017', // Dark green from web theme
   },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f', // Card background
     padding: 16,
     marginBottom: 10,
     shadowColor: '#000',
@@ -142,18 +142,18 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#39E079', // Primary green
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#a0a0a0',
     marginTop: 4,
   },
   list: {
     padding: 16,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f', // Card background
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   courseName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f6f8f7',
   },
   badge: {
     paddingHorizontal: 10,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeText: {
-    color: '#fff',
+    color: '#122017',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -190,14 +190,14 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#666',
+    color: '#a0a0a0',
   },
   emptyState: {
     padding: 40,
     alignItems: 'center',
   },
   emptyText: {
-    color: '#999',
+    color: '#a0a0a0',
     fontSize: 14,
   },
 });

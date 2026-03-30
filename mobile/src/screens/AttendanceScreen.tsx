@@ -142,20 +142,20 @@ export default function AttendanceScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#122017', // Dark green from web theme
   },
   header: {
     padding: 20,
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079', // Primary green
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#122017', // Dark text on green
   },
   subtitle: {
     fontSize: 14,
-    color: '#e0e0e0',
+    color: '#1a2a1f',
     marginTop: 4,
   },
   section: {
@@ -164,21 +164,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#f6f8f7', // Light text
     marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#39E079',
     borderRadius: 12,
     padding: 16,
     fontSize: 24,
     textAlign: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#1a2a1f', // Card background
+    color: '#f6f8f7',
     letterSpacing: 8,
   },
   button: {
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#39E079', // Primary green
     padding: 16,
     borderRadius: 12,
     marginHorizontal: 20,
