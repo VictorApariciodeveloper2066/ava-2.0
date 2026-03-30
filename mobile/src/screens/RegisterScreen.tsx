@@ -1,18 +1,21 @@
-// Register Screen
+// Register Screen - Redesigned with web theme
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import { useAppStore } from '../store';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import theme from '../utils/theme';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -60,155 +63,136 @@ export default function RegisterScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Regístrate en AVA</Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboard}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.logo}>AVA</Text>
+            <Text style={styles.title}>Crear Cuenta</Text>
+            <Text style={styles.subtitle}>Regístrate en AVA</Text>
+          </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Usuario</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.username}
-            onChangeText={(v) => handleChange('username', v)}
-            placeholder="Nombre de usuario"
-            autoCapitalize="none"
-          />
+          {/* Form */}
+          <View style={styles.form}>
+            <Input
+              label="Usuario"
+              placeholder="Nombre de usuario"
+              value={formData.username}
+              onChangeText={(v) => handleChange('username', v)}
+              autoCapitalize="none"
+            />
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.email}
-            onChangeText={(v) => handleChange('email', v)}
-            placeholder="tu@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+            <Input
+              label="Email"
+              placeholder="tu@email.com"
+              value={formData.email}
+              onChangeText={(v) => handleChange('email', v)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-          <Text style={styles.label}>Primer Nombre</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.primer_nombre}
-            onChangeText={(v) => handleChange('primer_nombre', v)}
-            placeholder="Tu nombre"
-          />
+            <Input
+              label="Primer Nombre"
+              placeholder="Tu nombre"
+              value={formData.primer_nombre}
+              onChangeText={(v) => handleChange('primer_nombre', v)}
+            />
 
-          <Text style={styles.label}>Primer Apellido</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.primer_apellido}
-            onChangeText={(v) => handleChange('primer_apellido', v)}
-            placeholder="Tu apellido"
-          />
+            <Input
+              label="Primer Apellido"
+              placeholder="Tu apellido"
+              value={formData.primer_apellido}
+              onChangeText={(v) => handleChange('primer_apellido', v)}
+            />
 
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.password}
-            onChangeText={(v) => handleChange('password', v)}
-            placeholder="Mínimo 6 caracteres"
-            secureTextEntry
-          />
+            <Input
+              label="Contraseña"
+              placeholder="Mínimo 6 caracteres"
+              value={formData.password}
+              onChangeText={(v) => handleChange('password', v)}
+              secureTextEntry
+              secureToggle
+            />
 
-          <Text style={styles.label}>Confirmar Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.confirmPassword}
-            onChangeText={(v) => handleChange('confirmPassword', v)}
-            placeholder="Repite tu contraseña"
-            secureTextEntry
-          />
+            <Input
+              label="Confirmar Contraseña"
+              placeholder="Repite tu contraseña"
+              value={formData.confirmPassword}
+              onChangeText={(v) => handleChange('confirmPassword', v)}
+              secureTextEntry
+              secureToggle
+            />
 
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleRegister}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Registrando...' : 'Registrarse'}
-            </Text>
-          </TouchableOpacity>
+            <Button
+              title="Registrarse"
+              onPress={handleRegister}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.registerButton}
+            />
 
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Button
+              title="¿Ya tienes cuenta? Inicia sesión"
+              onPress={() => navigation.goBack()}
+              variant="ghost"
+              style={styles.loginLink}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
+  },
+  keyboard: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    padding: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 20,
+    marginBottom: theme.spacing.lg,
+  },
+  logo: {
+    fontSize: theme.typography.heading + 8,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.sm,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a73e8',
+    fontSize: theme.typography.heading,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.text,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
   form: {
     width: '100%',
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+  registerButton: {
+    marginTop: theme.spacing.lg,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-  },
-  button: {
-    backgroundColor: '#1a73e8',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#1a73e8',
-    fontSize: 14,
+  loginLink: {
+    marginTop: theme.spacing.md,
   },
 });
