@@ -1,7 +1,7 @@
 // Main App component with navigation
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,6 +18,35 @@ import ProfileScreen from './src/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
+// Loading Spinner Component
+function LoadingSpinner() {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]}>
+      <View style={styles.spinnerCircle}>
+        <View style={styles.spinnerArc} />
+      </View>
+    </Animated.View>
+  );
+}
+
 function AppNavigator() {
   const { isAuthenticated, isLoading, checkAuth } = useAppStore();
 
@@ -28,9 +57,11 @@ function AppNavigator() {
   if (isLoading) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text>Cargando...</Text>
+        <StatusBar style="light" />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingLogo}>AVA</Text>
+          <LoadingSpinner />
+          <Text style={styles.loadingText}>Cargando...</Text>
         </View>
       </SafeAreaProvider>
     );
@@ -100,6 +131,48 @@ function AppNavigator() {
     </Stack.Navigator>
   );
 }
+
+// Styles
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#122017', // Dark green from web theme
+  },
+  loadingLogo: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#39E079', // Primary green
+    marginBottom: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#a0a0a0',
+    marginTop: 20,
+  },
+  spinner: {
+    width: 60,
+    height: 60,
+  },
+  spinnerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 4,
+    borderColor: '#1a2a1f', // Darker green
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  spinnerArc: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 4,
+    borderColor: 'transparent',
+    borderTopColor: '#39E079', // Primary green
+  },
+});
 
 export default function App() {
   return (
