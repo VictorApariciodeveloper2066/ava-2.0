@@ -51,7 +51,7 @@ function LoadingSpinner() {
 }
 
 function AppNavigator() {
-  const { isAuthenticated, isLoading, checkAuth } = useAppStore();
+  const { isAuthenticated, isLoading, needsEnrollment, checkAuth } = useAppStore();
 
   useEffect(() => {
     checkAuth();
@@ -83,13 +83,33 @@ function AppNavigator() {
       }}
     >
       {isAuthenticated ? (
-        // Authenticated screens
-        <>
-          <Stack.Screen 
-            name="Dashboard" 
-            component={DashboardScreen}
-            options={{ title: 'AVA - Dashboard', headerShown: false }}
-          />
+        needsEnrollment ? (
+          // Enrollment screens (post-registration)
+          <>
+            <Stack.Screen 
+              name="Carrera" 
+              component={CarreraScreen}
+              options={{ title: 'Seleccionar Carrera', headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Semestre" 
+              component={SemestreScreen}
+              options={{ title: 'Seleccionar Semestre', headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Materias" 
+              component={MateriasScreen}
+              options={{ title: 'Seleccionar Materias', headerShown: false }}
+            />
+          </>
+        ) : (
+          // Authenticated screens
+          <>
+            <Stack.Screen 
+              name="Dashboard" 
+              component={DashboardScreen}
+              options={{ title: 'AVA - Dashboard', headerShown: false }}
+            />
           <Stack.Screen 
             name="Attendance" 
             component={AttendanceScreen}
@@ -128,21 +148,6 @@ function AppNavigator() {
             name="Register" 
             component={RegisterScreen}
             options={{ title: 'Registrarse', headerShown: false }}
-          />
-          <Stack.Screen 
-            name="Carrera" 
-            component={CarreraScreen}
-            options={{ title: 'Seleccionar Carrera', headerShown: false }}
-          />
-          <Stack.Screen 
-            name="Semestre" 
-            component={SemestreScreen}
-            options={{ title: 'Seleccionar Semestre', headerShown: false }}
-          />
-          <Stack.Screen 
-            name="Materias" 
-            component={MateriasScreen}
-            options={{ title: 'Seleccionar Materias', headerShown: false }}
           />
         </>
       )}

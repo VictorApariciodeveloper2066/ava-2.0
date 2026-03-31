@@ -12,6 +12,7 @@ interface AppState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  needsEnrollment: boolean; // New: true if user needs to complete enrollment
   
   // Data state
   secciones: Seccion[];
@@ -36,6 +37,7 @@ interface AppState {
   loadJustificativos: () => Promise<void>;
   marcarAsistencia: (seccionId: number, codigo: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  completeEnrollment: () => void; // New: mark enrollment as complete
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -43,6 +45,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+  needsEnrollment: false,
   secciones: [],
   courses: [],
   attendanceHistory: [],
@@ -57,6 +60,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         user: response.user,
         isAuthenticated: true,
         isLoading: false,
+        needsEnrollment: false, // Login means already enrolled
       });
     } catch (error) {
       set({ isLoading: false });
@@ -73,11 +77,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         user: response.user,
         isAuthenticated: true,
         isLoading: false,
+        needsEnrollment: true, // New user needs to complete enrollment
       });
     } catch (error) {
       set({ isLoading: false });
       throw error;
     }
+  },
+
+  // Complete enrollment
+  completeEnrollment: () => {
+    set({ needsEnrollment: false });
   },
 
   // Logout action

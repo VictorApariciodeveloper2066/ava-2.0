@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import theme from '../utils/theme';
 import apiService from '../services/api';
+import { useAppStore } from '../store';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -54,6 +55,7 @@ export default function MateriasScreen({ navigation, route }: Props) {
   const [materias, setMaterias] = useState<MateriaConSecciones[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { completeEnrollment } = useAppStore();
 
   useEffect(() => {
     loadData();
@@ -124,13 +126,19 @@ export default function MateriasScreen({ navigation, route }: Props) {
         secciones: seccionesIds,
       });
 
+      // Mark enrollment as complete
+      completeEnrollment();
+      
       Alert.alert(
         '¡Inscripción Exitosa!',
         `Te has inscrito en ${seleccionadas.length} materia(s)`,
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Dashboard'),
+            onPress: () => navigation.reset({
+              index: 0,
+              routes: [{ name: 'Dashboard' }],
+            }),
           },
         ]
       );
