@@ -1,11 +1,11 @@
-// Dashboard Screen - Grid layout with sidebar
+// Dashboard Screen - Weekly Schedule View (Horario Semanal Premium)
+// Based on Stitch design with AVA theme colors
 import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   RefreshControl,
   Alert,
   ScrollView,
@@ -19,8 +19,6 @@ import theme from '../utils/theme';
 import Sidebar from '../components/Sidebar';
 
 const { width } = Dimensions.get('window');
-const CARD_MARGIN = theme.spacing.sm;
-const CARD_WIDTH = (width - theme.spacing.lg * 2 - CARD_MARGIN * 2) / 2;
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -38,6 +36,7 @@ export default function DashboardScreen({ navigation }: Props) {
   
   const [refreshing, setRefreshing] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(new Date().getDay()); // 0=Sunday, 1=Monday, etc.
 
   useEffect(() => {
     loadSecciones();
@@ -62,14 +61,14 @@ export default function DashboardScreen({ navigation }: Props) {
     );
   };
 
-  const getDayShort = (dia: number) => {
-    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    return days[dia] || 'N/A';
+  const getDayName = (dia: number) => {
+    const days = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    return days[dia] || '';
   };
 
   const getDayFull = (dia: number) => {
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    return days[dia] || 'Desconocido';
+    const days = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    return days[dia] || '';
   };
 
   const getGreeting = () => {
@@ -97,6 +96,13 @@ export default function DashboardScreen({ navigation }: Props) {
     }
   };
 
+  // Get courses for selected day
+  const getCoursesForDay = (day: number) => {
+    // Convert from JS day (0=Sunday) to our format (1=Monday)
+    const dayIndex = day === 0 ? 7 : day; // Convert Sunday to 7
+    return secciones.filter(s => s.dia === dayIndex);
+  };
+
   // Sidebar items
   const sidebarItems = [
     {
@@ -121,29 +127,73 @@ export default function DashboardScreen({ navigation }: Props) {
     },
   ];
 
-  const renderCourseCard = ({ item, index }: { item: any; index: number }) => (
-    <TouchableOpacity 
-      style={[
-        styles.courseCard,
-        index % 2 === 0 ? { marginRight: CARD_MARGIN } : { marginLeft: CARD_MARGIN },
-      ]}
-      onPress={() => navigation.navigate('Attendance', { seccion: item })}
+  const renderDayButton = (dayIndex: number) => {
+    const isSelected = dayIndex === selectedDay;
+    const isToday = dayIndex === new Date().getDay();
+    const coursesCount = getCoursesForDay(dayIndex).length;
+    
+    return (
+      <TouchableOpacity
+        key={dayIndex}
+        style={[
+          styles.dayButton,
+          isSelected && styles.dayButtonSelected,
+        ]}
+        onPress={() => setSelectedDay(dayIndex)}
+      >
+        <Text style={[
+          styles.dayName,
+          isSelected && styles.dayNameSelected,
+        ]}>
+          {getDayName(dayIndex)}
+        </Text>
+        {isToday && <View style={styles.todayDot} />}
+        {coursesCount > 0 && (
+          <View style={styles.courseCountBadge}>
+            <Text style={styles.courseCountText}>{coursesCount}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCourseCard = (course: any, index: number) => (
+    <TouchableOpacity
+      key={course.id || index}
+      style={styles.courseCard}
+      onPress={() => navigation.navigate('Attendance', { seccion: course })}
       activeOpacity={0.8}
     >
-      <View style={styles.courseDayBadge}>
-        <Text style={styles.courseDayText}>{getDayShort(item.dia)}</Text>
+      <View style={styles.courseTimeColumn}>
+        <Text style={styles.courseStartTime}>{course.start_time || '--:--'}</Text>
+        <View style={styles.timeLine} />
+        <Text style={styles.courseEndTime}>{course.end_time || '--:--'}</Text>
       </View>
-      <Text style={styles.courseName} numberOfLines={2}>
-        {item.codigo || item.name}
-      </Text>
-      <View style={styles.courseTime}>
-        <Text style={styles.timeText}>{item.start_time || '--:--'}</Text>
+      
+      <View style={styles.courseDetails}>
+        <Text style={styles.courseName}>{course.codigo || course.name}</Text>
+        <View style={styles.courseMeta}>
+          <Text style={styles.courseAula}>📍 {course.aula || 'Sin aula'}</Text>
+        </View>
       </View>
-      <View style={styles.courseAula}>
-        <Text style={styles.aulaText}>{item.aula || 'Sin aula'}</Text>
-      </View>
+      
+      <TouchableOpacity 
+        style={styles.attendanceButton}
+        onPress={() => navigation.navigate('Attendance', { seccion: course })}
+      >
+        <Text style={styles.attendanceButtonText}>✓</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
+
+  // Get current date
+  const currentDate = new Date();
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const currentMonth = monthNames[currentDate.getMonth()];
+  const currentYear = currentDate.getFullYear();
+
+  const coursesForSelectedDay = getCoursesForDay(selectedDay);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -184,9 +234,6 @@ export default function DashboardScreen({ navigation }: Props) {
             <Text style={styles.userName}>
               {user?.primer_nombre || user?.username || 'Usuario'}
             </Text>
-            <Text style={styles.userRole}>
-              {getRoleEmoji(user?.role)} {getRoleName(user?.role)}
-            </Text>
           </View>
 
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -194,27 +241,59 @@ export default function DashboardScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Courses Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📚 Mis Materias</Text>
-          
-          {secciones.length > 0 ? (
-            <View style={styles.grid}>
-              {secciones.map((seccion, index) => (
-                <View key={seccion.id || index} style={styles.gridItem}>
-                  {renderCourseCard({ item: seccion, index })}
-                </View>
-              ))}
-            </View>
+        {/* Date Info */}
+        <View style={styles.dateSection}>
+          <Text style={styles.dateTitle}>Horario Semanal</Text>
+          <Text style={styles.dateSubtitle}>
+            {currentMonth} {currentYear}
+          </Text>
+        </View>
+
+        {/* Week Selector */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.weekSelector}
+          contentContainerStyle={styles.weekSelectorContent}
+        >
+          {[1, 2, 3, 4, 5, 6, 0].map(day => renderDayButton(day))}
+        </ScrollView>
+
+        {/* Selected Day Title */}
+        <View style={styles.selectedDayHeader}>
+          <Text style={styles.selectedDayTitle}>
+            {getDayFull(selectedDay === 0 ? 7 : selectedDay)}
+          </Text>
+          <Text style={styles.selectedDayCount}>
+            {coursesForSelectedDay.length} materia{coursesForSelectedDay.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+
+        {/* Courses for Selected Day */}
+        <View style={styles.coursesContainer}>
+          {coursesForSelectedDay.length > 0 ? (
+            coursesForSelectedDay.map((course, index) => renderCourseCard(course, index))
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📚</Text>
-              <Text style={styles.emptyTitle}>No tienes materias asignadas</Text>
+              <Text style={styles.emptyIcon}>📅</Text>
+              <Text style={styles.emptyTitle}>Sin clases este día</Text>
               <Text style={styles.emptySubtitle}>
-                Contacta a tu administrador para asignar materias
+                No tienes materias programadas para {getDayFull(selectedDay === 0 ? 7 : selectedDay)}
               </Text>
             </View>
           )}
+        </View>
+
+        {/* Quick Stats */}
+        <View style={styles.quickStats}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{secciones.length}</Text>
+            <Text style={styles.statLabel}>Total Materias</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>85%</Text>
+            <Text style={styles.statLabel}>Asistencia</Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -262,11 +341,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginTop: 2,
   },
-  userRole: {
-    fontSize: theme.typography.small,
-    color: theme.colors.primary,
-    marginTop: 2,
-  },
   logoutButton: {
     padding: theme.spacing.sm,
   },
@@ -275,71 +349,156 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
 
-  // Section
-  section: {
+  // Date Section
+  dateSection: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  dateTitle: {
+    fontSize: theme.typography.heading,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.text,
+  },
+  dateSubtitle: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+
+  // Week Selector
+  weekSelector: {
+    marginBottom: theme.spacing.lg,
+  },
+  weekSelectorContent: {
     paddingHorizontal: theme.spacing.lg,
   },
-  sectionTitle: {
+  dayButton: {
+    width: 60,
+    height: 70,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+    position: 'relative',
+  },
+  dayButtonSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  dayName: {
+    fontSize: theme.typography.small,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.text,
+  },
+  dayNameSelected: {
+    color: theme.colors.textDark,
+  },
+  todayDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary,
+  },
+  courseCountBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: theme.colors.primary,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  courseCountText: {
+    fontSize: 10,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textDark,
+  },
+
+  // Selected Day Header
+  selectedDayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  selectedDayTitle: {
     fontSize: theme.typography.body + 2,
     fontWeight: theme.typography.bold,
     color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+  },
+  selectedDayCount: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
   },
 
-  // Grid
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -CARD_MARGIN,
-  },
-  gridItem: {
-    width: '50%',
-    marginBottom: theme.spacing.md,
+  // Courses Container
+  coursesContainer: {
+    paddingHorizontal: theme.spacing.lg,
   },
 
-  // Course Card
+  // Course Card (Timeline style)
   courseCard: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    height: CARD_WIDTH,
-    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+    alignItems: 'center',
   },
-  courseDayBadge: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-    alignSelf: 'flex-start',
+  courseTimeColumn: {
+    alignItems: 'center',
+    width: 60,
   },
-  courseDayText: {
-    color: theme.colors.textDark,
+  courseStartTime: {
+    fontSize: theme.typography.body,
     fontWeight: theme.typography.bold,
-    fontSize: theme.typography.tiny,
+    color: theme.colors.primary,
+  },
+  timeLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: '#2a3a2f',
+    marginVertical: theme.spacing.xs,
+  },
+  courseEndTime: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+  },
+  courseDetails: {
+    flex: 1,
+    marginLeft: theme.spacing.md,
   },
   courseName: {
     fontSize: theme.typography.body,
     fontWeight: theme.typography.bold,
     color: theme.colors.text,
-    marginVertical: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
-  courseTime: {
-    backgroundColor: '#2a3a2f',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-    alignSelf: 'flex-start',
-  },
-  timeText: {
-    color: theme.colors.text,
-    fontSize: theme.typography.tiny,
+  courseMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   courseAula: {
-    marginTop: theme.spacing.xs,
-  },
-  aulaText: {
+    fontSize: theme.typography.small,
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.tiny,
+  },
+  attendanceButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attendanceButtonText: {
+    fontSize: 20,
+    color: theme.colors.textDark,
   },
 
   // Empty State
@@ -361,5 +520,30 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.body,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+  },
+
+  // Quick Stats
+  quickStats: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginHorizontal: theme.spacing.xs,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: theme.typography.heading + 4,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.primary,
+  },
+  statLabel: {
+    fontSize: theme.typography.tiny,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
   },
 });
