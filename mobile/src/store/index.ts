@@ -111,16 +111,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       
       if (userData && token) {
         const user = JSON.parse(userData);
-        set({ user, isAuthenticated: true, isLoading: false });
-        
-        // Optionally refresh user data
-        try {
-          const { user: freshUser } = await apiService.getProfile();
-          set({ user: freshUser });
-        } catch {
-          // Token might be invalid, clear auth
-          await get().logout();
-        }
+        set({ user, isAuthenticated: true, isLoading: false, needsEnrollment: false });
       } else {
         set({ isLoading: false });
       }

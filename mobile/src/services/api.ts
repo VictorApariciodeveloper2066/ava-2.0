@@ -7,28 +7,13 @@ const memoryStorage: Record<string, string> = {};
 
 export const storage = {
   async getItem(key: string): Promise<string | null> {
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      return await AsyncStorage.getItem(key);
-    } catch {
-      return memoryStorage[key] || null;
-    }
+    return memoryStorage[key] || null;
   },
   async setItem(key: string, value: string): Promise<void> {
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.setItem(key, value);
-    } catch {
-      memoryStorage[key] = value;
-    }
+    memoryStorage[key] = value;
   },
   async removeItem(key: string): Promise<void> {
-    try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.removeItem(key);
-    } catch {
-      delete memoryStorage[key];
-    }
+    delete memoryStorage[key];
   }
 };
 import {
