@@ -16,9 +16,11 @@ def register_routes(app):
     from .asistencia import asistencia_api_bp
     from .justificativos import justificativos_api_bp
     from .sync import sync_api_bp
+    from .inscripcion import inscripcion_api_bp
     
     app.register_blueprint(auth_api_bp, url_prefix='/api/auth')
     app.register_blueprint(secciones_api_bp, url_prefix='/api/secciones')
     app.register_blueprint(asistencia_api_bp, url_prefix='/api/asistencia')
     app.register_blueprint(justificativos_api_bp, url_prefix='/api/justificativos')
     app.register_blueprint(sync_api_bp, url_prefix='/api/sync')
+    app.register_blueprint(inscripcion_api_bp, url_prefix='/api/inscripcion')

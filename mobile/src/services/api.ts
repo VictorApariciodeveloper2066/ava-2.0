@@ -131,6 +131,18 @@ class ApiService {
     await storage.removeItem(STORAGE_KEYS.USER_DATA);
   }
 
+  // Generic GET method
+  async get(url: string): Promise<any> {
+    const response = await this.api.get(url);
+    return response;
+  }
+
+  // Generic POST method
+  async post(url: string, data?: any): Promise<any> {
+    const response = await this.api.post(url, data);
+    return response;
+  }
+
   async getProfile(): Promise<{ user: User }> {
     const response = await this.api.get<{ user: User }>('/auth/profile');
     return response.data;

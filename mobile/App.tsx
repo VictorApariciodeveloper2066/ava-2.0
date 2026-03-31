@@ -15,6 +15,9 @@ import AttendanceScreen from './src/screens/AttendanceScreen';
 import AttendanceHistoryScreen from './src/screens/AttendanceHistoryScreen';
 import JustificativosScreen from './src/screens/JustificativosScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import CarreraScreen from './src/screens/CarreraScreen';
+import SemestreScreen from './src/screens/SemestreScreen';
+import MateriasScreen from './src/screens/MateriasScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -125,6 +128,21 @@ function AppNavigator() {
             name="Register" 
             component={RegisterScreen}
             options={{ title: 'Registrarse', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Carrera" 
+            component={CarreraScreen}
+            options={{ title: 'Seleccionar Carrera', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Semestre" 
+            component={SemestreScreen}
+            options={{ title: 'Seleccionar Semestre', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Materias" 
+            component={MateriasScreen}
+            options={{ title: 'Seleccionar Materias', headerShown: false }}
           />
         </>
       )}
