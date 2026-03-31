@@ -288,11 +288,7 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={styles.quickStats}>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{secciones.length}</Text>
-            <Text style={styles.statLabel}>Total Materias</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>85%</Text>
-            <Text style={styles.statLabel}>Asistencia</Text>
+            <Text style={styles.statLabel}>Materias Inscritas</Text>
           </View>
         </View>
       </ScrollView>
