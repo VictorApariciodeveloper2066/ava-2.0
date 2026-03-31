@@ -194,22 +194,6 @@ export default function DashboardScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{secciones.length}</Text>
-            <Text style={styles.statLabel}>Materias</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>85%</Text>
-            <Text style={styles.statLabel}>Asistencia</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>2</Text>
-            <Text style={styles.statLabel}>Pendientes</Text>
-          </View>
-        </View>
-
         {/* Courses Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📚 Mis Materias</Text>
@@ -289,31 +273,6 @@ const styles = StyleSheet.create({
   logoutIcon: {
     fontSize: 24,
     color: theme.colors.textSecondary,
-  },
-
-  // Stats Row
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    marginHorizontal: CARD_MARGIN / 2,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: theme.typography.heading + 4,
-    fontWeight: theme.typography.bold,
-    color: theme.colors.primary,
-  },
-  statLabel: {
-    fontSize: theme.typography.tiny,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
   },
 
   // Section
