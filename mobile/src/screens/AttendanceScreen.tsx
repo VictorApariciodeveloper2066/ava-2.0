@@ -1,5 +1,5 @@
-// Attendance Screen - Mark attendance with session code
-import React, { useState } from 'react';
+// Attendance Screen - Auto-select section based on current time
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-  FlatList,
 } from 'react-native';
 import { useAppStore } from '../store';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import theme from '../utils/theme';
 import { Seccion } from '../types';
 
 type Props = {
@@ -20,17 +20,96 @@ type Props = {
 
 export default function AttendanceScreen({ navigation }: Props) {
   const [codigo, setCodigo] = useState('');
-  const [seccionSeleccionada, setSeccionSeleccionada] = useState<Seccion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [claseActual, setClaseActual] = useState<Seccion | null>(null);
+  const [proximaClase, setProximaClase] = useState<Seccion | null>(null);
   const { secciones, loadSecciones, marcarAsistencia } = useAppStore();
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadSecciones();
   }, []);
 
+  useEffect(() => {
+    if (secciones.length > 0) {
+      findCurrentClass();
+    }
+  }, [secciones]);
+
+  const getDayName = (dia: number) => {
+    const days = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    return days[dia] || 'Desconocido';
+  };
+
+  const getShortDayName = (dia: number) => {
+    const days = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    return days[dia] || 'N/A';
+  };
+
+  const getCurrentDay = () => {
+    const jsDay = new Date().getDay(); // 0=Sunday in JS
+    return jsDay === 0 ? 7 : jsDay; // Convert to our format: 1=Lun, 7=Dom
+  };
+
+  const getCurrentMinutes = () => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  };
+
+  const parseTimeToMinutes = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  const findCurrentClass = () => {
+    const currentDay = getCurrentDay();
+    const currentMinutes = getCurrentMinutes();
+
+    // Find current class (within time range)
+    let found: Seccion | null = null;
+    let next: Seccion | null = null;
+    let minDiff = Infinity;
+
+    for (const seccion of secciones) {
+      const startMinutes = parseTimeToMinutes(seccion.start_time);
+      const endMinutes = parseTimeToMinutes(seccion.end_time);
+
+      // Check if this is the current class (same day, within time)
+      if (seccion.dia === currentDay && 
+          currentMinutes >= startMinutes && 
+          currentMinutes <= endMinutes) {
+        found = seccion;
+        break;
+      }
+
+      // Check if this is the next class
+      if (seccion.dia === currentDay && currentMinutes < startMinutes) {
+        const diff = startMinutes - currentMinutes;
+        if (diff < minDiff) {
+          minDiff = diff;
+          next = seccion;
+        }
+      }
+    }
+
+    // If no class today, find next class on future days
+    if (!found && !next) {
+      for (let d = 1; d <= 7; d++) {
+        const checkDay = ((currentDay + d - 1) % 7) + 1;
+        const futureClass = secciones.find(s => s.dia === checkDay);
+        if (futureClass) {
+          next = futureClass;
+          break;
+        }
+      }
+    }
+
+    setClaseActual(found);
+    setProximaClase(next);
+  };
+
   const handleMarcarAsistencia = async () => {
-    if (!seccionSeleccionada) {
-      Alert.alert('Error', 'Por favor selecciona una sección');
+    if (!claseActual) {
+      Alert.alert('Error', 'No tienes clase en este momento');
       return;
     }
 
@@ -41,10 +120,10 @@ export default function AttendanceScreen({ navigation }: Props) {
 
     setIsLoading(true);
     try {
-      await marcarAsistencia(seccionSeleccionada.id, codigo);
-      Alert.alert('Éxito', 'Asistencia marcada correctamente');
-      setCodigo('');
-      navigation.goBack();
+      await marcarAsistencia(claseActual.id, codigo);
+      Alert.alert('Éxito', 'Asistencia marcada correctamente', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } catch (error: any) {
       const message = error?.response?.data?.error || 'Error al marcar asistencia';
       Alert.alert('Error', message);
@@ -53,84 +132,79 @@ export default function AttendanceScreen({ navigation }: Props) {
     }
   };
 
-  const getDayName = (dia: number) => {
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    return days[dia] || 'Desconocido';
-  };
-
-  const renderSeccion = ({ item }: { item: Seccion }) => (
-    <TouchableOpacity
-      style={[
-        styles.seccionCard,
-        seccionSeleccionada?.id === item.id && styles.seccionCardSelected,
-      ]}
-      onPress={() => setSeccionSeleccionada(item)}
-    >
-      <Text style={styles.seccionTitle}>{item.codigo}</Text>
-      <Text style={styles.seccionInfo}>
-        {getDayName(item.dia)} • {item.start_time} - {item.end_time}
-      </Text>
-      <Text style={styles.seccionAula}>Aula: {item.aula || 'Sin asignar'}</Text>
-    </TouchableOpacity>
-  );
-
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Marcar Asistencia</Text>
-        <Text style={styles.subtitle}>
-          Ingresa el código proporcionado por tu profesor
+        <Text style={styles.currentDateTime}>
+          {getShortDayName(getCurrentDay())} {new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </View>
 
-      {/* Seleccionar Sección */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Selecciona tu sección:</Text>
-        {secciones.length > 0 ? (
-          <FlatList
-            data={secciones}
-            renderItem={renderSeccion}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No tienes secciones asignadas</Text>
+      {claseActual ? (
+        <>
+          {/* Clase Actual */}
+          <View style={styles.claseCard}>
+            <Text style={styles.claseLabel}>Clase Actual:</Text>
+            <Text style={styles.claseNombre}>{claseActual.codigo}</Text>
+            <Text style={styles.claseHorario}>
+              {getDayName(claseActual.dia)} {claseActual.start_time} - {claseActual.end_time}
+            </Text>
+            <Text style={styles.claseAula}>Aula: {claseActual.aula || 'Por asignar'}</Text>
           </View>
-        )}
-      </View>
 
-      {/* Input de Código */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Código de Sesión:</Text>
-        <TextInput
-          style={styles.input}
-          value={codigo}
-          onChangeText={setCodigo}
-          placeholder="Ingresa el código de 4 dígitos"
-          keyboardType="numeric"
-          maxLength={4}
-          placeholderTextColor="#999"
-        />
-      </View>
+          {/* Input de Código */}
+          <View style={styles.codigoSection}>
+            <Text style={styles.label}>Código de Sesión:</Text>
+            <TextInput
+              style={styles.input}
+              value={codigo}
+              onChangeText={setCodigo}
+              placeholder="Ingresa el código de 4 dígitos"
+              keyboardType="numeric"
+              maxLength={4}
+              placeholderTextColor={theme.colors.textSecondary}
+            />
+          </View>
 
-      {/* Botón de Marcar */}
-      <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleMarcarAsistencia}
-        disabled={isLoading || !seccionSeleccionada || !codigo}
-      >
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Marcando...' : 'Marcar Asistencia'}
-        </Text>
-      </TouchableOpacity>
+          {/* Botón de Marcar */}
+          <TouchableOpacity
+            style={[styles.button, (isLoading || !codigo) && styles.buttonDisabled]}
+            onPress={handleMarcarAsistencia}
+            disabled={isLoading || !codigo}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Marcando...' : 'Marcar Asistencia'}
+            </Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        /* No hay clase en este momento */
+        <View style={styles.noClaseCard}>
+          <Text style={styles.noClaseIcon}>⏰</Text>
+          <Text style={styles.noClaseTitle}>No tienes clase en este momento</Text>
+          
+          {proximaClase ? (
+            <View style={styles.proximaClaseContainer}>
+              <Text style={styles.proximaClaseLabel}>Próxima clase:</Text>
+              <Text style={styles.proximaClaseNombre}>{proximaClase.codigo}</Text>
+              <Text style={styles.proximaClaseHorario}>
+                {getDayName(proximaClase.dia)} {proximaClase.start_time}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.noProximaClase}>No hay clases programadas</Text>
+          )}
+        </View>
+      )}
 
-      {/* Info adicional */}
+      {/* Info */}
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>¿Cómo funciona?</Text>
         <Text style={styles.infoText}>
-          1. Tu profesor genera un código de sesión{'\n'}
-          2. Selecciona tu sección{'\n'}
+          1. El sistema detecta automáticamente tu clase actual{'\n'}
+          2. Tu profesor genera un código de sesión{'\n'}
           3. Ingresa el código de 4 dígitos{'\n'}
           4. ¡Listo! Tu asistencia está registrada
         </Text>
@@ -142,107 +216,166 @@ export default function AttendanceScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#122017', // Dark green from web theme
+    backgroundColor: theme.colors.background,
   },
+  content: {
+    paddingBottom: theme.spacing.xxl,
+  },
+  
+  // Header
   header: {
-    padding: 20,
-    backgroundColor: '#39E079', // Primary green
+    backgroundColor: theme.colors.primary,
+    padding: theme.spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#122017', // Dark text on green
+    fontSize: theme.typography.heading,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textDark,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#1a2a1f',
-    marginTop: 4,
+  currentDateTime: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textDark,
+    fontWeight: theme.typography.semibold,
   },
-  section: {
-    padding: 20,
+
+  // Clase Actual Card
+  claseCard: {
+    backgroundColor: theme.colors.card,
+    margin: theme.spacing.lg,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  claseLabel: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  claseNombre: {
+    fontSize: theme.typography.heading,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.xs,
+  },
+  claseHorario: {
+    fontSize: theme.typography.body,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  claseAula: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+  },
+
+  // Código Section
+  codigoSection: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#f6f8f7', // Light text
-    marginBottom: 12,
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#39E079',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 24,
+    backgroundColor: theme.colors.card,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    fontSize: theme.typography.heading + 8,
     textAlign: 'center',
-    backgroundColor: '#1a2a1f', // Card background
-    color: '#f6f8f7',
-    letterSpacing: 8,
+    color: theme.colors.text,
+    letterSpacing: 12,
   },
+
+  // Button
   button: {
-    backgroundColor: '#39E079', // Primary green
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 20,
+    backgroundColor: theme.colors.primary,
+    marginHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#2a3a2f',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: theme.colors.textDark,
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
   },
-  seccionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#ddd',
-  },
-  seccionCardSelected: {
-    borderColor: '#1a73e8',
-    backgroundColor: '#e8f0fe',
-  },
-  seccionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a73e8',
-  },
-  seccionInfo: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  seccionAula: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  emptyState: {
-    padding: 20,
+
+  // No Clase Card
+  noClaseCard: {
+    backgroundColor: theme.colors.card,
+    margin: theme.spacing.lg,
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
   },
-  emptyText: {
-    color: '#999',
-    fontSize: 14,
+  noClaseIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
   },
+  noClaseTitle: {
+    fontSize: theme.typography.body + 2,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+
+  // Próxima Clase
+  proximaClaseContainer: {
+    alignItems: 'center',
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#2a3a2f',
+    width: '100%',
+  },
+  proximaClaseLabel: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  proximaClaseNombre: {
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.xs,
+  },
+  proximaClaseHorario: {
+    fontSize: theme.typography.small,
+    color: theme.colors.text,
+  },
+  noProximaClase: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // Info Box
   infoBox: {
-    margin: 20,
-    padding: 16,
-    backgroundColor: '#e8f5e9',
-    borderRadius: 12,
+    backgroundColor: '#1a2a3f',
+    margin: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
   },
   infoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 8,
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
+    color: '#50a0f0',
+    marginBottom: theme.spacing.sm,
   },
   infoText: {
-    fontSize: 13,
-    color: '#555',
-    lineHeight: 20,
+    fontSize: theme.typography.small,
+    color: theme.colors.text,
+    lineHeight: 22,
   },
 });
