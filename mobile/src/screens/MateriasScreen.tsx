@@ -47,7 +47,7 @@ interface Seccion {
 interface MateriaConSecciones {
   asignatura: Asignatura;
   secciones: Seccion[];
-  seccionSeleccionada: number | null;
+  seleccionada: boolean; // True if all secciones of this subject are selected
 }
 
 export default function MateriasScreen({ navigation, route }: Props) {
@@ -78,7 +78,7 @@ export default function MateriasScreen({ navigation, route }: Props) {
         materiasConSecciones.push({
           asignatura: asig,
           secciones: seccionesRes.data.secciones || [],
-          seccionSeleccionada: null,
+          seleccionada: false,
         });
       }
 
@@ -96,26 +96,24 @@ export default function MateriasScreen({ navigation, route }: Props) {
     return days[dia] || '';
   };
 
-  const handleSelectSeccion = (asignaturaId: number, seccionId: number) => {
+  const handleToggleMateria = (asignaturaId: number) => {
     setMaterias(prev => prev.map(m => {
       if (m.asignatura.id === asignaturaId) {
-        // Toggle: if already selected, deselect; otherwise select
-        const newSelection = m.seccionSeleccionada === seccionId ? null : seccionId;
-        return { ...m, seccionSeleccionada: newSelection };
+        return { ...m, seleccionada: !m.seleccionada };
       }
       return m;
     }));
   };
 
   const handleConfirm = async () => {
-    const seleccionadas = materias.filter(m => m.seccionSeleccionada !== null);
+    const seleccionadas = materias.filter(m => m.seleccionada);
     
     if (seleccionadas.length < 1) {
       Alert.alert('Error', 'Debes inscribir al menos 1 materia');
       return;
     }
 
-    // Check for schedule conflicts
+    // Check for schedule conflicts (across different subjects)
     const conflicts = checkScheduleConflicts(seleccionadas);
     if (conflicts) {
       Alert.alert('Conflicto de Horario', conflicts);
@@ -124,7 +122,14 @@ export default function MateriasScreen({ navigation, route }: Props) {
 
     setIsSubmitting(true);
     try {
-      const seccionesIds = seleccionadas.map(m => m.seccionSeleccionada);
+      // Get ALL seccion IDs from selected subjects
+      const seccionesIds: number[] = [];
+      seleccionadas.forEach(m => {
+        m.secciones.forEach(s => {
+          seccionesIds.push(s.id);
+        });
+      });
+      
       const response = await apiService.post('/inscripcion/inscripcion/lote', {
         secciones: seccionesIds,
       });
@@ -154,19 +159,27 @@ export default function MateriasScreen({ navigation, route }: Props) {
   };
 
   const checkScheduleConflicts = (seleccionadas: MateriaConSecciones[]): string | null => {
-    const secciones = seleccionadas.map(m => 
-      m.secciones.find(s => s.id === m.seccionSeleccionada)
-    ).filter(Boolean);
+    // Get all secciones from all selected subjects
+    const allSecciones: Seccion[] = [];
+    seleccionadas.forEach(m => {
+      m.secciones.forEach(s => {
+        allSecciones.push(s);
+      });
+    });
 
-    for (let i = 0; i < secciones.length; i++) {
-      for (let j = i + 1; j < secciones.length; j++) {
-        const s1 = secciones[i]!;
-        const s2 = secciones[j]!;
+    // Check for conflicts between different subjects
+    for (let i = 0; i < allSecciones.length; i++) {
+      for (let j = i + 1; j < allSecciones.length; j++) {
+        const s1 = allSecciones[i];
+        const s2 = allSecciones[j];
+        
+        // Skip if same subject (same asignatura)
+        if (s1.asignatura_id === s2.asignatura_id) continue;
         
         if (s1.dia === s2.dia) {
           // Check time overlap
           if (s1.start_time < s2.end_time && s1.end_time > s2.start_time) {
-            return `Conflicto entre ${s1.codigo} y ${s2.codigo} el ${getDayName(s1.dia)}`;
+            return `Conflicto entre ${seleccionadas.find(m => m.secciones.some(s => s.id === s1.id))?.asignatura.nombre} y ${seleccionadas.find(m => m.secciones.some(s => s.id === s2.id))?.asignatura.nombre} el ${getDayName(s1.dia)}`;
           }
         }
       }
@@ -174,7 +187,7 @@ export default function MateriasScreen({ navigation, route }: Props) {
     return null;
   };
 
-  const getSelectionCount = () => materias.filter(m => m.seccionSeleccionada !== null).length;
+  const getSelectionCount = () => materias.filter(m => m.seleccionada).length;
 
   if (isLoading) {
     return (
@@ -216,44 +229,54 @@ export default function MateriasScreen({ navigation, route }: Props) {
 
         {/* Materias List */}
         {materias.map((materia) => (
-          <View key={materia.asignatura.id} style={styles.materiaCard}>
+          <TouchableOpacity 
+            key={materia.asignatura.id} 
+            style={[
+              styles.materiaCard,
+              materia.seleccionada && styles.materiaCardSelected,
+            ]}
+            onPress={() => handleToggleMateria(materia.asignatura.id)}
+          >
             <View style={styles.materiaHeader}>
-              <Text style={styles.materiaName}>{materia.asignatura.nombre}</Text>
-              <Text style={styles.materiaInfo}>
-                {materia.asignatura.codigo} • {materia.asignatura.uv} UV
-              </Text>
+              <View style={styles.materiaLeft}>
+                <Text style={[
+                  styles.materiaName,
+                  materia.seleccionada && styles.materiaNameSelected,
+                ]}>
+                  {materia.asignatura.nombre}
+                </Text>
+                <Text style={styles.materiaInfo}>
+                  {materia.asignatura.codigo} • {materia.asignatura.uv} UV
+                </Text>
+              </View>
+              <View style={[
+                styles.checkbox,
+                materia.seleccionada && styles.checkboxSelected,
+              ]}>
+                {materia.seleccionada && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
             </View>
 
-            {/* Sections */}
-            {materia.secciones.length > 0 ? (
-              materia.secciones.map((seccion) => (
-                <TouchableOpacity
-                  key={seccion.id}
-                  style={[
-                    styles.seccionCard,
-                    materia.seccionSeleccionada === seccion.id && styles.seccionCardSelected,
-                  ]}
-                  onPress={() => handleSelectSeccion(materia.asignatura.id, seccion.id)}
-                >
-                  <View style={styles.seccionLeft}>
-                    <View style={[
-                      styles.radio,
-                      materia.seccionSeleccionada === seccion.id && styles.radioSelected,
-                    ]}>
-                      {materia.seccionSeleccionada === seccion.id && (
-                        <View style={styles.radioInner} />
-                      )}
-                    </View>
-                  </View>
-                  <View style={styles.seccionInfo}>
-                    <Text style={styles.profesorName}>
-                      {seccion.profesor?.nombre || 'Sin profesor'}
-                    </Text>
-                    <Text style={styles.seccionDetails}>
-                      {getDayName(seccion.dia)} {seccion.start_time} - {seccion.end_time}
-                    </Text>
-                    <Text style={styles.seccionAula}>
-                      📍 {seccion.aula} • {seccion.disponibles} cupos
+            {/* Schedule - All time slots grouped */}
+            <View style={styles.horariosContainer}>
+              {materia.secciones.map((seccion, idx) => (
+                <View key={seccion.id} style={styles.horarioItem}>
+                  <Text style={styles.horarioDia}>{getDayName(seccion.dia)}</Text>
+                  <Text style={styles.horarioHora}>{seccion.start_time} - {seccion.end_time}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Professor Info */}
+            <View style={styles.profesorContainer}>
+              <Text style={styles.profesorLabel}>Profesor:</Text>
+              <Text style={styles.profesorNombre}>
+                {materia.secciones[0]?.profesor?.nombre || 'Sin asignar'}
+              </Text>
+            </View>
+          </TouchableOpacity>
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -351,19 +374,90 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  materiaCardSelected: {
+    borderColor: theme.colors.primary,
   },
   materiaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: theme.spacing.md,
+  },
+  materiaLeft: {
+    flex: 1,
   },
   materiaName: {
     fontSize: theme.typography.body,
     fontWeight: theme.typography.bold,
     color: theme.colors.text,
   },
+  materiaNameSelected: {
+    color: theme.colors.primary,
+  },
   materiaInfo: {
     fontSize: theme.typography.small,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.textSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  checkmark: {
+    color: theme.colors.textDark,
+    fontSize: 16,
+    fontWeight: theme.typography.bold,
+  },
+  
+  // Horarios
+  horariosContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  horarioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+  },
+  horarioDia: {
+    fontSize: theme.typography.small,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.primary,
+    width: 40,
+  },
+  horarioHora: {
+    fontSize: theme.typography.small,
+    color: theme.colors.text,
+  },
+  
+  // Profesor
+  profesorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#2a3a2f',
+  },
+  profesorLabel: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+    marginRight: theme.spacing.sm,
+  },
+  profesorNombre: {
+    fontSize: theme.typography.small,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.text,
   },
   
   // Seccion Card
