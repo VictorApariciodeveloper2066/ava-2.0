@@ -23,6 +23,17 @@ import ProfesorMateriaScreen from './src/screens/ProfesorMateriaScreen';
 import GenerarCodigoScreen from './src/screens/GenerarCodigoScreen';
 import ListaAlumnosScreen from './src/screens/ListaAlumnosScreen';
 import HistorialAlumnoScreen from './src/screens/HistorialAlumnoScreen';
+// Admin screens
+import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
+import AdminUsuariosScreen from './src/screens/AdminUsuariosScreen';
+import AdminCarrerasScreen from './src/screens/AdminCarrerasScreen';
+import AdminMateriasScreen from './src/screens/AdminMateriasScreen';
+import AdminSeccionesScreen from './src/screens/AdminSeccionesScreen';
+import AdminPeriodosScreen from './src/screens/AdminPeriodosScreen';
+import AdminCodigosScreen from './src/screens/AdminCodigosScreen';
+import AdminAlumnosScreen from './src/screens/AdminAlumnosScreen';
+import AdminReportesScreen from './src/screens/AdminReportesScreen';
+import AdminHistorialScreen from './src/screens/AdminHistorialScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -104,6 +115,60 @@ function AppNavigator() {
             name="Materias" 
             component={MateriasScreen}
             options={{ title: 'Seleccionar Materias', headerShown: false }}
+          />
+        </>
+      ) : isAuthenticated && user?.role === 'admin' ? (
+        // Admin screens
+        <>
+          <Stack.Screen 
+            name="AdminDashboard" 
+            component={AdminDashboardScreen}
+            options={{ title: 'Admin Dashboard', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="AdminUsuarios" 
+            component={AdminUsuariosScreen}
+            options={{ title: 'Gestión de Usuarios' }}
+          />
+          <Stack.Screen 
+            name="AdminCarreras" 
+            component={AdminCarrerasScreen}
+            options={{ title: 'Gestión de Carreras' }}
+          />
+          <Stack.Screen 
+            name="AdminMaterias" 
+            component={AdminMateriasScreen}
+            options={{ title: 'Gestión de Materias' }}
+          />
+          <Stack.Screen 
+            name="AdminSecciones" 
+            component={AdminSeccionesScreen}
+            options={{ title: 'Gestión de Secciones' }}
+          />
+          <Stack.Screen 
+            name="AdminPeriodos" 
+            component={AdminPeriodosScreen}
+            options={{ title: 'Períodos Académicos' }}
+          />
+          <Stack.Screen 
+            name="AdminCodigos" 
+            component={AdminCodigosScreen}
+            options={{ title: 'Códigos de Profesor' }}
+          />
+          <Stack.Screen 
+            name="AdminAlumnos" 
+            component={AdminAlumnosScreen}
+            options={{ title: 'Asignar Alumnos' }}
+          />
+          <Stack.Screen 
+            name="AdminReportes" 
+            component={AdminReportesScreen}
+            options={{ title: 'Reportes' }}
+          />
+          <Stack.Screen 
+            name="AdminHistorial" 
+            component={AdminHistorialScreen}
+            options={{ title: 'Historial de Asistencia' }}
           />
         </>
       ) : isAuthenticated && user?.role === 'profesor' ? (

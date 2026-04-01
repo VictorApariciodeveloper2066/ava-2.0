@@ -18,6 +18,7 @@ def register_routes(app):
     from .sync import sync_api_bp
     from .inscripcion import inscripcion_api_bp
     from .profesor import profesor_api_bp
+    from .admin import admin_api_bp
     
     app.register_blueprint(auth_api_bp, url_prefix='/api/auth')
     app.register_blueprint(secciones_api_bp, url_prefix='/api/secciones')
@@ -26,3 +27,4 @@ def register_routes(app):
     app.register_blueprint(sync_api_bp, url_prefix='/api/sync')
     app.register_blueprint(inscripcion_api_bp, url_prefix='/api/inscripcion')
     app.register_blueprint(profesor_api_bp, url_prefix='/api/profesor')
+    app.register_blueprint(admin_api_bp, url_prefix='/api/admin')
