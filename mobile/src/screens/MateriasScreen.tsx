@@ -277,14 +277,6 @@ export default function MateriasScreen({ navigation, route }: Props) {
               </Text>
             </View>
           </TouchableOpacity>
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={styles.noSecciones}>No hay secciones disponibles</Text>
-            )}
-          </View>
         ))}
 
         {/* Confirm Button */}
