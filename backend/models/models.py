@@ -354,3 +354,79 @@ class LogAsistencia(db.Model):
 
     def __repr__(self):
         return f'<LogAsistencia accion={self.accion}>'
+
+
+# =============================================================================
+# MODELOS DE PROFESOR
+# =============================================================================
+
+class CodigoProfesor(db.Model):
+    """Códigos únicos para registro de profesores (4 dígitos alfanuméricos)"""
+    __tablename__ = 'codigo_profesor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False)  # ej: "PROF-1234"
+    usado = db.Column(db.Boolean, default=False)
+    usado_por = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<CodigoProfesor {self.codigo} usado={self.usado}>'
+
+
+class CodigoAsistencia(db.Model):
+    """Códigos temporales para marcar asistencia en clase"""
+    __tablename__ = 'codigo_asistencia'
+
+    id = db.Column(db.Integer, primary_key=True)
+    seccion_id = db.Column(db.Integer, db.ForeignKey('seccion.id'), nullable=False)
+    codigo = db.Column(db.String(4), nullable=False)  # 4 dígitos
+    fecha = db.Column(db.Date, default=datetime.utcnow)
+    expira = db.Column(db.DateTime, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    seccion = db.relationship('Seccion', backref='codigos_asistencia', lazy=True)
+    profesor = db.relationship('User', backref='codigos_generados', lazy=True)
+
+    def __repr__(self):
+        return f'<CodigoAsistencia {self.codigo} seccion={self.seccion_id}>'
+
+
+class AsistenciaManual(db.Model):
+    """Registro de asistencia marcada manualmente por el profesor"""
+    __tablename__ = 'asistencia_manual'
+
+    id = db.Column(db.Integer, primary_key=True)
+    seccion_id = db.Column(db.Integer, db.ForeignKey('seccion.id'), nullable=False)
+    alumno_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    estado = db.Column(db.String(20), nullable=False, default='presente')  # presente, ausente, justificado
+    fecha = db.Column(db.Date, default=datetime.utcnow)
+    marcado_por = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    seccion = db.relationship('Seccion', backref='asistencias_manuales', lazy=True)
+    alumno = db.relationship('User', foreign_keys=[alumno_id], backref='asistencias_alumno', lazy=True)
+    profesor = db.relationship('User', foreign_keys=[marcado_por], backref='asistencias_marcadas', lazy=True)
+
+    def __repr__(self):
+        return f'<AsistenciaManual alumno={self.alumno_id} estado={self.estado}>'
+
+
+class LogAsistenciaProfesor(db.Model):
+    """Historial de cambios de asistencia (auditoría)"""
+    __tablename__ = 'log_asistencia_profesor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    asistencia_id = db.Column(db.Integer, db.ForeignKey('asistencia_manual.id'), nullable=True)
+    alumno_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    seccion_id = db.Column(db.Integer, db.ForeignKey('seccion.id'), nullable=False)
+    estado_anterior = db.Column(db.String(20), nullable=True)
+    estado_nuevo = db.Column(db.String(20), nullable=False)
+    modificado_por = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<LogAsistenciaProfesor alumno={self.alumno_id} {self.estado_anterior}→{self.estado_nuevo}>'

@@ -20,3 +20,11 @@ from .models import (
     DetalleAsistencia,
     LogAsistencia,
 )
+
+# Modelos de profesor
+from .models import (
+    CodigoProfesor,
+    CodigoAsistencia,
+    AsistenciaManual,
+    LogAsistenciaProfesor,
+)

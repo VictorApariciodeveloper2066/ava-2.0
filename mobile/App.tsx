@@ -18,6 +18,11 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import CarreraScreen from './src/screens/CarreraScreen';
 import SemestreScreen from './src/screens/SemestreScreen';
 import MateriasScreen from './src/screens/MateriasScreen';
+import ProfesorDashboardScreen from './src/screens/ProfesorDashboardScreen';
+import ProfesorMateriaScreen from './src/screens/ProfesorMateriaScreen';
+import GenerarCodigoScreen from './src/screens/GenerarCodigoScreen';
+import ListaAlumnosScreen from './src/screens/ListaAlumnosScreen';
+import HistorialAlumnoScreen from './src/screens/HistorialAlumnoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -101,8 +106,37 @@ function AppNavigator() {
             options={{ title: 'Seleccionar Materias', headerShown: false }}
           />
         </>
+      ) : isAuthenticated && user?.role === 'profesor' ? (
+        // Professor screens
+        <>
+          <Stack.Screen 
+            name="ProfesorDashboard" 
+            component={ProfesorDashboardScreen}
+            options={{ title: 'Profesor Dashboard', headerShown: false }}
+          />
+          <Stack.Screen 
+            name="ProfesorMateria" 
+            component={ProfesorMateriaScreen}
+            options={{ title: 'Detalle de Materia' }}
+          />
+          <Stack.Screen 
+            name="GenerarCodigo" 
+            component={GenerarCodigoScreen}
+            options={{ title: 'Generar Código' }}
+          />
+          <Stack.Screen 
+            name="ListaAlumnos" 
+            component={ListaAlumnosScreen}
+            options={{ title: 'Lista de Alumnos' }}
+          />
+          <Stack.Screen 
+            name="HistorialAlumno" 
+            component={HistorialAlumnoScreen}
+            options={{ title: 'Historial del Alumno' }}
+          />
+        </>
       ) : isAuthenticated ? (
-        // Authenticated screens (after enrollment)
+        // Authenticated screens (after enrollment) - Student
         <>
           <Stack.Screen 
             name="Dashboard" 
