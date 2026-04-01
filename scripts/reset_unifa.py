@@ -74,6 +74,7 @@ def reset_unifa_data(app):
         print('[OK] Periodo: ' + periodo.nombre)
         
         # 6. Define subjects with schedules and professors
+        # Days: 1=Lun, 2=Mar, 3=Mie, 4=Jue, 5=Vie, 6=Sab, 7=Dom
         subjects_data = [
             {
                 'codigo': 'SYC-32514',
@@ -82,7 +83,6 @@ def reset_unifa_data(app):
                 'uv': 4,
                 'profesor': 'Jackmary Del Valle Henriquez Ramos',
                 'horarios': [
-                    (4, '10:00', '12:15'),  # Jue
                     (1, '13:45', '16:00'),  # Lun
                 ]
             },
@@ -93,7 +93,7 @@ def reset_unifa_data(app):
                 'uv': 4,
                 'profesor': 'Jackmary Del Valle Henriquez Ramos',
                 'horarios': [
-                    (3, '12:15', '16:45'),  # Mie
+                    (4, '12:15', '17:30'),  # Jue
                 ]
             },
             {
@@ -113,8 +113,7 @@ def reset_unifa_data(app):
                 'uv': 3,
                 'profesor': 'William Alejandro Lopez Garcia',
                 'horarios': [
-                    (5, '07:00', '07:45'),  # Vie
-                    (5, '10:00', '12:15'),  # Vie
+                    (6, '07:00', '12:15'),  # Sab
                 ]
             },
             {
@@ -124,8 +123,7 @@ def reset_unifa_data(app):
                 'uv': 5,
                 'profesor': 'Siuri Sujey Blanco Romero',
                 'horarios': [
-                    (3, '12:15', '13:00'),  # Mie
-                    (4, '13:00', '17:30'),  # Jue
+                    (5, '13:45', '17:30'),  # Vie
                 ]
             },
             {
@@ -135,7 +133,7 @@ def reset_unifa_data(app):
                 'uv': 5,
                 'profesor': 'Eduardo Jose Rivero',
                 'horarios': [
-                    (2, '13:00', '15:15'),  # Mar
+                    (3, '13:45', '16:00'),  # Mie
                 ]
             },
             {
@@ -155,8 +153,7 @@ def reset_unifa_data(app):
                 'uv': 2,
                 'profesor': 'William Alejandro Lopez Garcia',
                 'horarios': [
-                    (1, '16:45', '17:30'),  # Lun
-                    (2, '16:45', '17:30'),  # Mar
+                    (3, '11:30', '12:15'),  # Mie
                 ]
             },
         ]
