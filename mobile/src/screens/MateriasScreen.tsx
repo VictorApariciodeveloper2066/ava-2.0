@@ -97,11 +97,14 @@ export default function MateriasScreen({ navigation, route }: Props) {
   };
 
   const handleSelectSeccion = (asignaturaId: number, seccionId: number) => {
-    setMaterias(prev => prev.map(m => 
-      m.asignatura.id === asignaturaId 
-        ? { ...m, seccionSeleccionada: seccionId }
-        : m
-    ));
+    setMaterias(prev => prev.map(m => {
+      if (m.asignatura.id === asignaturaId) {
+        // Toggle: if already selected, deselect; otherwise select
+        const newSelection = m.seccionSeleccionada === seccionId ? null : seccionId;
+        return { ...m, seccionSeleccionada: newSelection };
+      }
+      return m;
+    }));
   };
 
   const handleConfirm = async () => {
