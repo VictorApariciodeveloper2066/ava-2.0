@@ -67,7 +67,7 @@ function LoadingSpinner() {
 }
 
 function AppNavigator() {
-  const { isAuthenticated, isLoading, needsEnrollment, checkAuth } = useAppStore();
+  const { isAuthenticated, isLoading, needsEnrollment, user, checkAuth } = useAppStore();
 
   useEffect(() => {
     checkAuth();

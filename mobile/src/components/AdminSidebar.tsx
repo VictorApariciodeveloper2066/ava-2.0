@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import theme from '../utils/theme';
 
@@ -85,8 +86,6 @@ export default function AdminSidebar({
   );
 }
 
-const { width: screenWidth } = require('react-native').Dimensions.get('window');
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -97,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sidebar: {
-    width: screenWidth * 0.8,
+    width: width * 0.8,
     backgroundColor: theme.colors.background,
     elevation: 5,
     shadowColor: '#000',
