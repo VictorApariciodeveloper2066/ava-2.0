@@ -59,7 +59,7 @@ def get_materias_profesor():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     # Get sections where user is professor
@@ -124,14 +124,15 @@ def get_alumnos_seccion(seccion_id):
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     seccion = Seccion.query.get(seccion_id)
     if not seccion:
         return jsonify({"error": "Sección no encontrada"}), 404
     
-    if seccion.profesor_id != user_id:
+    # Admin can access any section, profesor only their own
+    if user.role == 'profesor' and seccion.profesor_id != user_id:
         return jsonify({"error": "No eres profesor de esta sección"}), 403
     
     # Get enrolled students
@@ -203,7 +204,7 @@ def generar_codigo_asistencia():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     data = request.get_json()
@@ -216,7 +217,7 @@ def generar_codigo_asistencia():
     if not seccion:
         return jsonify({"error": "Sección no encontrada"}), 404
     
-    if seccion.profesor_id != user_id:
+    if user.role == 'profesor' and seccion.profesor_id != user_id:
         return jsonify({"error": "No eres profesor de esta sección"}), 403
     
     # Calculate expiration (end of class time)
@@ -264,7 +265,7 @@ def marcar_asistencia_manual():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     data = request.get_json()
@@ -282,7 +283,7 @@ def marcar_asistencia_manual():
     if not seccion:
         return jsonify({"error": "Sección no encontrada"}), 404
     
-    if seccion.profesor_id != user_id:
+    if user.role == 'profesor' and seccion.profesor_id != user_id:
         return jsonify({"error": "No eres profesor de esta sección"}), 403
     
     # Check if student is enrolled
@@ -349,7 +350,7 @@ def get_historial_alumno(alumno_id, seccion_id):
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     seccion = Seccion.query.get(seccion_id)
@@ -402,7 +403,7 @@ def descargar_reporte_pdf(seccion_id):
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     seccion = Seccion.query.get(seccion_id)
@@ -552,7 +553,7 @@ def descargar_reporte_excel(seccion_id):
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     
-    if not user or user.role != 'profesor':
+    if not user or user.role not in ['profesor', 'admin']:
         return jsonify({"error": "Acceso no autorizado"}), 403
     
     seccion = Seccion.query.get(seccion_id)

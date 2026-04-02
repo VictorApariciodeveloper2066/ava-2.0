@@ -430,6 +430,123 @@ def get_secciones():
     return jsonify({"secciones": result}), 200
 
 
+@admin_api_bp.route('/secciones/filtradas', methods=['GET'])
+@jwt_required()
+def get_secciones_filtradas():
+    """
+    GET /api/admin/secciones/filtradas?carrera_id=X&profesor_id=Y&search=Z
+    Returns filtered sections list with advanced filters
+    """
+    user_id = int(get_jwt_identity())
+    admin = check_admin(user_id)
+    if not admin:
+        return jsonify({"error": "Acceso no autorizado"}), 403
+    
+    carrera_id = request.args.get('carrera_id', type=int)
+    profesor_id = request.args.get('profesor_id', type=int)
+    search = request.args.get('search')
+    
+    # Base query
+    query = Seccion.query.filter_by(activo=True)
+    
+    # Filter by carrera (through asignatura)
+    if carrera_id:
+        query = query.join(Asignatura).filter(Asignatura.carrera_id == carrera_id)
+    
+    # Filter by profesor
+    if profesor_id:
+        query = query.filter_by(profesor_id=profesor_id)
+    
+    # Search filter
+    if search:
+        query = query.join(Asignatura).filter(
+            db.or_(
+                Seccion.codigo.ilike(f'%{search}%'),
+                Asignatura.nombre.ilike(f'%{search}%'),
+                Asignatura.codigo.ilike(f'%{search}%')
+            )
+        )
+    
+    secciones = query.order_by(Asignatura.nombre, Seccion.dia).all()
+    
+    day_names = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    
+    result = []
+    for seccion in secciones:
+        materia = Asignatura.query.get(seccion.asignatura_id)
+        profesor = User.query.get(seccion.profesor_id) if seccion.profesor_id else None
+        carrera = Carrera.query.get(materia.carrera_id) if materia else None
+        alumnos_count = Inscripcion.query.filter_by(seccion_id=seccion.id, estado='activa').count()
+        
+        result.append({
+            "id": seccion.id,
+            "codigo": seccion.codigo,
+            "asignatura_id": seccion.asignatura_id,
+            "asignatura_codigo": materia.codigo if materia else "N/A",
+            "asignatura_nombre": materia.nombre if materia else "N/A",
+            "carrera_nombre": carrera.nombre if carrera else "N/A",
+            "carrera_id": carrera.id if carrera else None,
+            "profesor_id": seccion.profesor_id,
+            "profesor_nombre": f"{profesor.primer_nombre or ''} {profesor.primer_apellido or ''}".strip() if profesor else "Sin asignar",
+            "dia": seccion.dia,
+            "dia_nombre": day_names[seccion.dia] if 0 <= seccion.dia <= 7 else "N/A",
+            "start_time": seccion.start_time.strftime("%H:%M") if seccion.start_time else None,
+            "end_time": seccion.end_time.strftime("%H:%M") if seccion.end_time else None,
+            "aula": seccion.aula,
+            "capacidad": seccion.capacidad,
+            "alumnos_count": alumnos_count
+        })
+    
+    return jsonify({"secciones": result}), 200
+
+
+@admin_api_bp.route('/carreras/lista', methods=['GET'])
+@jwt_required()
+def get_carreras_lista():
+    """
+    GET /api/admin/carreras/lista
+    Returns simplified list of careers for filters
+    """
+    user_id = int(get_jwt_identity())
+    admin = check_admin(user_id)
+    if not admin:
+        return jsonify({"error": "Acceso no autorizado"}), 403
+    
+    carreras = Carrera.query.filter_by(activo=True).order_by(Carrera.nombre).all()
+    
+    return jsonify({
+        "carreras": [
+            {"id": c.id, "nombre": c.nombre, "codigo": c.codigo}
+            for c in carreras
+        ]
+    }), 200
+
+
+@admin_api_bp.route('/profesores/lista', methods=['GET'])
+@jwt_required()
+def get_profesores_lista():
+    """
+    GET /api/admin/profesores/lista
+    Returns simplified list of professors for filters
+    """
+    user_id = int(get_jwt_identity())
+    admin = check_admin(user_id)
+    if not admin:
+        return jsonify({"error": "Acceso no autorizado"}), 403
+    
+    profesores = User.query.filter_by(role='profesor', activo=True).order_by(User.primer_nombre).all()
+    
+    return jsonify({
+        "profesores": [
+            {
+                "id": p.id,
+                "nombre": f"{p.primer_nombre or ''} {p.primer_apellido or ''}".strip() or p.username
+            }
+            for p in profesores
+        ]
+    }), 200
+
+
 @admin_api_bp.route('/secciones', methods=['POST'])
 @jwt_required()
 def create_seccion():
