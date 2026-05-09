@@ -83,3 +83,10 @@ pgloader instance/users.db postgresql://[DATABASE_URL]
 - SQLite (Desarrollo)
 - TailwindCSS
 - Gunicorn
+
+## Capturas
+![alt text](image.png)
+
+# Dahsboard
+
+![alt text](image-1.png)
